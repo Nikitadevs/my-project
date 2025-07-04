@@ -40,20 +40,14 @@ const Contact = ({ darkMode }) => {
     {
       name: 'GitHub',
       icon: <FaGithub className="text-2xl" />,
-      url: 'https://github.com/yourusername',
+      url: 'https://github.com/Nikitadevs',
       color: darkMode ? 'hover:text-gray-300' : 'hover:text-gray-700',
     },
     {
       name: 'LinkedIn',
       icon: <FaLinkedin className="text-2xl" />,
-      url: 'https://linkedin.com/in/yourusername',
+      url: 'https://www.linkedin.com/in/nikita-veretenko-b502b928a',
       color: 'hover:text-blue-500',
-    },
-    {
-      name: 'Twitter',
-      icon: <FaTwitter className="text-2xl" />,
-      url: 'https://twitter.com/yourusername',
-      color: 'hover:text-blue-400',
     },
   ];
 
@@ -61,19 +55,19 @@ const Contact = ({ darkMode }) => {
     {
       icon: <FaEnvelope className="text-2xl" />,
       label: 'Email',
-      value: 'your.email@example.com',
-      link: 'mailto:your.email@example.com',
+      value: 'n.verk06@gmail.com',
+      link: 'mailto:n.verk06@gmail.com',
     },
     {
       icon: <FaMapMarkerAlt className="text-2xl" />,
       label: 'Location',
-      value: 'City, Country',
+      value: 'Chicago, IL',
     },
     {
       icon: <FaPhone className="text-2xl" />,
       label: 'Phone',
-      value: '+1 234 567 890',
-      link: 'tel:+1234567890',
+      value: '+1 847 702 5352',
+      link: 'tel:+18477025352',
     },
   ];
 
