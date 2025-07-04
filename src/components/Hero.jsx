@@ -515,7 +515,7 @@ const Hero = ({
           {/* Enhanced heading with dynamic typing */}
           <motion.h1
             variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
+            className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight"
           >
             <motion.span 
               className="block"
@@ -538,18 +538,22 @@ const Hero = ({
               }`}>
               <TypeAnimation
                 sequence={[
-                  ' Nikita', 2000,
-                  ' a Developer', 1500,
-                  ' a Designer', 1500,
-                  ' an Innovator', 1500,
-                  ' a Problem Solver', 1500,
+                  ' Nikita', 3000,
+                  ' a Developer', 2000,
+                  ' a Designer', 2000,
+                  ' an Innovator', 2000,
+                  ' a Problem Solver', 2000,
                 ]}
                 wrapper="span"
-                speed={50}
-                deletionSpeed={65}
+                speed={40}
+                deletionSpeed={50}
                 repeat={Infinity}
                 cursor={true}
-                style={{ display: 'inline-block' }}
+                style={{ 
+                  display: 'inline-block',
+                  minHeight: '1.2em',
+                  whiteSpace: 'pre'
+                }}
               />
             </span>
           </motion.h1>
