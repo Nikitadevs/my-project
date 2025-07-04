@@ -16,22 +16,20 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-y: scroll;
+  overflow-y: auto;
   scroll-behavior: smooth;
   overscroll-behavior: none;
   min-height: 100%;
-  /* Fix for iOS Safari bounce effect showing white space */
-  position: fixed;
-  width: 100%;
   /* Ensure proper padding for iOS devices with notches */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Enable smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
   min-height: 100vh;
-  /* Enable scrolling on the main content instead of body */
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* Remove overflow as it's handled by body now */
+  position: relative;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
