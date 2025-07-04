@@ -531,7 +531,7 @@ const Hero = ({
             >
               Hi, I'm
             </motion.span>
-            <span className={`bg-gradient-to-r bg-clip-text text-transparent
+            <span className={`bg-gradient-to-r bg-clip-text text-transparent inline-block
               ${darkMode 
                 ? 'from-blue-400 via-purple-400 to-pink-400'
                 : 'from-blue-600 via-purple-600 to-pink-600'
@@ -544,16 +544,12 @@ const Hero = ({
                   ' an Innovator', 2000,
                   ' a Problem Solver', 2000,
                 ]}
-                wrapper="span"
-                speed={40}
-                deletionSpeed={50}
+                wrapper="div"
+                speed={50}
+                deletionSpeed={65}
                 repeat={Infinity}
                 cursor={true}
-                style={{ 
-                  display: 'inline-block',
-                  minHeight: '1.2em',
-                  whiteSpace: 'pre'
-                }}
+                className="inline-block min-h-[1.2em] whitespace-pre"
               />
             </span>
           </motion.h1>
