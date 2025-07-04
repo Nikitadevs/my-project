@@ -17,6 +17,132 @@ import {
   faEnvelope,
 } from '@fortawesome/free-solid-svg-icons';
 
+// Animation variants
+const navItemHoverVariants = {
+  initial: {
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    scale: 1,
+    y: 0,
+    boxShadow: "0 0 0 rgba(59, 130, 246, 0)",
+    border: "1px solid transparent"
+  },
+  hover: {
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+    scale: 1.05,
+    y: -3,
+    boxShadow: "0 4px 20px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.15)",
+    border: "1px solid rgba(59, 130, 246, 0.2)",
+    transition: {
+      duration: 0.3,
+      ease: [0.43, 0.13, 0.23, 0.96],
+      scale: {
+        type: "spring",
+        stiffness: 400,
+        damping: 15
+      },
+      boxShadow: {
+        duration: 0.4
+      }
+    }
+  },
+  tap: {
+    scale: 0.97,
+    y: 1,
+    boxShadow: "0 2px 8px rgba(59, 130, 246, 0.1)",
+    transition: {
+      duration: 0.1,
+      ease: "easeOut"
+    }
+  }
+};
+
+const toggleContainerVariants = {
+  light: {
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20
+    }
+  },
+  dark: {
+    backgroundColor: "rgba(96, 165, 250, 0.1)",
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20
+    }
+  },
+  hover: {
+    scale: 1.05,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 10
+    }
+  },
+  tap: {
+    scale: 0.95
+  }
+};
+
+const toggleIconVariants = {
+  light: {
+    rotate: 0,
+    scale: 1,
+    filter: "drop-shadow(0 0 8px rgba(234, 179, 8, 0.5))",
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 10
+    }
+  },
+  dark: {
+    rotate: 360,
+    scale: 1,
+    filter: "drop-shadow(0 0 8px rgba(96, 165, 250, 0.5))",
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 10
+    }
+  },
+  tap: {
+    scale: 0.9,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 10
+    }
+  }
+};
+
+const darkModeTextVariants = {
+  hidden: { 
+    opacity: 0, 
+    x: -10, 
+    width: 0 
+  },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    width: 'auto',
+    transition: {
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    x: 10, 
+    width: 0,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn"
+    }
+  }
+};
+
 const CustomIcons = {
   Home: ({ className }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -312,6 +438,54 @@ const iconHoverVariants = {
   })
 };
 
+// Add a new variant for the text inside nav items
+const navTextVariants = {
+  initial: {
+    letterSpacing: "0em",
+    y: 0
+  },
+  hover: {
+    letterSpacing: "0.02em",
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.43, 0.13, 0.23, 0.96]
+    }
+  }
+};
+
+const navIconVariants = {
+  initial: {
+    scale: 1,
+    rotate: 0
+  },
+  hover: {
+    scale: 1.1,
+    rotate: 5,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 15
+    }
+  },
+  tap: {
+    scale: 0.9,
+    rotate: -5
+  }
+};
+
+// Add styles for the gradient background
+const gradientStyle = {
+  background: "linear-gradient(120deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1))",
+  backgroundSize: "200% 100%",
+  backgroundPosition: "100% 0",
+  transition: "background-position 0.3s ease"
+};
+
+const hoverGradientStyle = {
+  backgroundPosition: "0 0"
+};
+
 const Header = ({ darkMode, toggleDarkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showDarkModeText, setShowDarkModeText] = useState(false);
@@ -470,28 +644,6 @@ const Header = ({ darkMode, toggleDarkMode }) => {
     },
     tap: {
       scale: 0.95,
-    },
-  };
-
-  const darkModeTextVariants = {
-    hidden: { opacity: 0, x: -10, width: 0 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      width: 'auto',
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      x: 10, 
-      width: 0,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn",
-      }
     },
   };
 
@@ -751,7 +903,7 @@ const Header = ({ darkMode, toggleDarkMode }) => {
 
           {/* Enhanced Desktop Navigation */}
           <motion.div
-            className="hidden md:flex items-center space-x-8"
+            className="hidden md:flex items-center space-x-6"
             variants={navVariants}
             initial="hidden"
             animate="visible"
@@ -759,61 +911,116 @@ const Header = ({ darkMode, toggleDarkMode }) => {
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href}
-                variants={itemVariants}
+                variants={navItemHoverVariants}
+                initial="initial"
                 whileHover="hover"
                 whileTap="tap"
                 onHoverStart={() => setHoveredItem(item.id)}
                 onHoverEnd={() => setHoveredItem(null)}
+                className="relative rounded-xl overflow-hidden"
               >
                 <Link
                   to={item.href}
-                  className={`text-lg font-medium transition-all duration-300 relative group flex items-center gap-2 px-4 py-2 rounded-xl
+                  className={`text-base font-medium transition-all duration-300 relative group flex items-center gap-2 px-4 py-2.5 rounded-xl
                     ${isActive(item.href)
                       ? darkMode
-                        ? 'text-blue-400 bg-blue-500/10'
+                        ? 'text-blue-300 bg-blue-500/10'
                         : 'text-blue-600 bg-blue-50'
                       : darkMode
                         ? 'text-gray-300 hover:text-white'
-                        : 'text-gray-700 hover:text-gray-900'
+                        : 'text-gray-600 hover:text-gray-900'
                     }`}
                   onClick={() => setIsOpen(false)}
                 >
                   <motion.div
                     custom={index}
-                    variants={iconHoverVariants}
-                    initial="initial"
-                    whileHover="hover"
+                    className="relative"
                     animate={item.hoverEffect(hoveredItem === item.id)}
                   >
                     <item.Icon
-                      className={`w-5 h-5 ${
+                      className={`w-[18px] h-[18px] ${
                         isActive(item.href)
-                          ? 'text-blue-500'
+                          ? darkMode
+                            ? 'text-blue-300'
+                            : 'text-blue-500'
                           : darkMode
                             ? 'text-gray-400'
                             : 'text-gray-500'
                       }`}
                     />
+                    {/* Enhanced icon glow effect */}
+                    <motion.div
+                      className={`absolute inset-0 blur-md rounded-full ${
+                        darkMode ? 'bg-blue-400/30' : 'bg-blue-500/30'
+                      }`}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={isActive(item.href) || hoveredItem === item.id ? {
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.6, 0.3]
+                      } : { scale: 0, opacity: 0 }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
                   </motion.div>
                   {item.label}
-                  <motion.span
-                    className={`absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transform origin-left`}
-                    initial={{ scaleX: isActive(item.href) ? 1 : 0 }}
-                    animate={{ scaleX: isActive(item.href) ? 1 : 0 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  {/* Enhanced hover background effect */}
+                  <motion.div
+                    className={`absolute inset-0 rounded-xl ${
+                      darkMode
+                        ? 'bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0'
+                        : 'bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0'
+                    }`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{
+                      opacity: 1,
+                      scale: 1,
+                      transition: {
+                        duration: 0.2
+                      }
+                    }}
                   />
-                  <motion.span
-                    className="absolute inset-0 rounded-xl bg-current"
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 0.05 }}
-                    transition={{ duration: 0.3 }}
-                  />
+                  {/* Active indicator with enhanced animation */}
+                  {isActive(item.href) && (
+                    <motion.div
+                      className="absolute inset-0 rounded-xl overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <motion.div
+                        className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                          darkMode ? 'bg-blue-400/50' : 'bg-blue-500/50'
+                        }`}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30
+                        }}
+                      />
+                      <motion.div
+                        className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                          darkMode ? 'bg-blue-300' : 'bg-blue-400'
+                        }`}
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </motion.div>
+                  )}
                 </Link>
               </motion.div>
             ))}
 
-            {/* Enhanced Dark Mode Toggle for Desktop */}
+            {/* Enhanced Dark Mode Toggle */}
             <motion.div
               className="relative flex items-center"
               onMouseEnter={() => setShowDarkModeText(true)}
@@ -821,97 +1028,133 @@ const Header = ({ darkMode, toggleDarkMode }) => {
             >
               <motion.button
                 onClick={toggleDarkMode}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-colors duration-300
-                  ${darkMode
-                    ? 'bg-gray-800 hover:bg-gray-700'
-                    : 'bg-blue-50 hover:bg-blue-100'
-                  }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                variants={toggleContainerVariants}
+                initial={darkMode ? "dark" : "light"}
+                animate={darkMode ? "dark" : "light"}
+                whileHover="hover"
+                whileTap="tap"
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl`}
               >
-                <div className="relative">
+                <motion.div
+                  className="relative"
+                  variants={toggleIconVariants}
+                  initial={darkMode ? "dark" : "light"}
+                  animate={darkMode ? "dark" : "light"}
+                  whileTap="tap"
+                >
                   <motion.div
-                    variants={iconVariants}
-                    animate={darkMode ? "dark" : "light"}
+                    className="relative z-10"
+                    initial={false}
+                    animate={darkMode ? {
+                      rotate: [0, 45, 90, 180, 270, 360],
+                      scale: [1, 0.8, 1.2, 0.9, 1.1, 1]
+                    } : {
+                      rotate: [360, 315, 270, 180, 90, 0],
+                      scale: [1, 1.2, 0.9, 1.1, 0.8, 1]
+                    }}
+                    transition={{
+                      duration: 0.6,
+                      ease: "easeInOut",
+                      times: [0, 0.2, 0.4, 0.6, 0.8, 1]
+                    }}
                   >
                     <FontAwesomeIcon
                       icon={darkMode ? faMoon : faSun}
-                      className={`text-xl ${
+                      className={`text-lg ${
                         darkMode 
-                          ? 'text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.7)]' 
-                          : 'text-blue-600 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
+                          ? 'text-blue-300' 
+                          : 'text-yellow-500'
                       }`}
                     />
                   </motion.div>
-
-                  {/* Sunburst Effect */}
+                  {/* Enhanced glow effect */}
                   <motion.div
-                    className="absolute inset-0 z-10"
-                    variants={sunburstVariants}
-                    animate={darkMode ? "dark" : "light"}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-orange-300 to-yellow-200 rounded-full blur-[2px]" />
-                  </motion.div>
-
-                  {/* Sun Rays */}
-                  <motion.div
-                    className="absolute inset-[-50%] z-0"
-                    variants={rayVariants}
-                    animate={darkMode ? "dark" : "light"}
-                  >
-                    {[...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute inset-0 bg-gradient-to-r from-yellow-200/30 to-orange-300/30"
-                        style={{
-                          transform: `rotate(${i * 45}deg)`,
-                          clipPath: 'polygon(50% 50%, 45% -20%, 55% -20%)'
-                        }}
-                      />
-                    ))}
-                  </motion.div>
-
-                  {/* Stars Effect for Dark Mode */}
-                  <motion.div
-                    className="absolute inset-[-100%] z-0"
-                    variants={starVariants}
-                    animate={darkMode ? "dark" : "light"}
-                  >
-                    {[...Array(6)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute bg-yellow-200 rounded-full w-1 h-1"
-                        style={{
-                          top: `${Math.random() * 100}%`,
-                          left: `${Math.random() * 100}%`,
-                          opacity: Math.random() * 0.7 + 0.3
-                        }}
-                        animate={{
-                          scale: [1, 1.5, 1],
-                          opacity: [0.3, 0.7, 0.3]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: Math.random() * 2,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    ))}
-                  </motion.div>
-                </div>
+                    className={`absolute inset-0 rounded-full blur-lg ${
+                      darkMode 
+                        ? 'bg-blue-400/30' 
+                        : 'bg-yellow-400/30'
+                    }`}
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.3, 0.6, 0.3]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                  {/* Particle effects */}
+                  {darkMode ? (
+                    <motion.div
+                      className="absolute inset-[-100%]"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {[...Array(6)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute w-1 h-1 bg-blue-300 rounded-full"
+                          style={{
+                            top: `${Math.random() * 100}%`,
+                            left: `${Math.random() * 100}%`
+                          }}
+                          animate={{
+                            scale: [1, 1.5, 1],
+                            opacity: [0.3, 0.7, 0.3],
+                            y: [0, -10, 0]
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            delay: i * 0.2,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      ))}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      className="absolute inset-[-50%]"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {[...Array(8)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute bg-yellow-400/30 h-px"
+                          style={{
+                            width: '100%',
+                            transformOrigin: 'center',
+                            rotate: `${i * 45}deg`
+                          }}
+                          animate={{
+                            scale: [1, 1.2, 1],
+                            opacity: [0.3, 0.7, 0.3]
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            delay: i * 0.1,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      ))}
+                    </motion.div>
+                  )}
+                </motion.div>
                 <AnimatePresence mode="wait">
                   {showDarkModeText && (
                     <motion.span
                       variants={darkModeTextVariants}
-                      initial="exit"
+                      initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className={`whitespace-nowrap font-medium ${
-                        darkMode ? 'text-yellow-400' : 'text-blue-600'
+                      className={`text-sm font-medium ${
+                        darkMode ? 'text-blue-300' : 'text-yellow-600'
                       }`}
                     >
-                      {darkMode ? 'Light Mode' : 'Dark Mode'}
+                      {darkMode ? 'Light' : 'Dark'}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -983,7 +1226,12 @@ const Header = ({ darkMode, toggleDarkMode }) => {
                           : 'text-gray-500'
                       }`}
                     />
-                    <span className="text-base font-medium">{item.label}</span>
+                    <motion.span
+                      variants={navTextVariants}
+                      className="font-medium"
+                    >
+                      {item.label}
+                    </motion.span>
                   </Link>
                 </motion.div>
               ))}

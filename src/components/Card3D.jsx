@@ -1,44 +1,38 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
 
-const Card3D = ({ children, darkMode, className = '' }) => {
-  return (
+const Card3D = ({ children, className = '', darkMode = false, disabled = false }) => {
+  const content = (
     <motion.div
-      className={`relative rounded-2xl overflow-hidden ${className} ${
+      className={`rounded-2xl overflow-hidden ${className} ${
         darkMode
-          ? 'bg-gray-800/80 backdrop-blur-xl border border-gray-700/50'
-          : 'bg-white/80 backdrop-blur-xl border border-gray-200/50'
+          ? 'bg-gray-800/50 backdrop-blur-sm'
+          : 'bg-white/80 backdrop-blur-sm shadow-lg'
       }`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ 
-        y: -8,
-        transition: { duration: 0.3, ease: "easeOut" }
-      }}
-      transition={{
-        duration: 0.5,
-        ease: "easeOut"
-      }}
+      whileHover={!disabled ? {
+        scale: 1.01,
+        y: -3,
+        transition: {
+          duration: 0.2,
+          ease: [0.43, 0.13, 0.23, 0.96]
+        }
+      } : {}}
+      whileTap={!disabled ? { scale: 0.98 } : {}}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      {/* Gradient border effect */}
-      <motion.div
-        className="absolute inset-0 opacity-0"
-        initial={{ opacity: 0 }}
-        whileHover={{ opacity: 0.1 }}
-        transition={{ duration: 0.3 }}
-        style={{
-          background: darkMode
-            ? 'linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899)'
-            : 'linear-gradient(45deg, #60A5FA, #A78BFA, #F472B6)'
-        }}
-      />
-
-      {/* Card content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      {children}
     </motion.div>
   );
+
+  return content;
 };
 
-export default Card3D; 
+Card3D.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+  darkMode: PropTypes.bool,
+  disabled: PropTypes.bool,
+};
+
+export default React.memo(Card3D); 

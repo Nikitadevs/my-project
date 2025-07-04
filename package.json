@@ -19,6 +19,9 @@
     "@sentry/react": "^7.101.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
+    "@tsparticles/engine": "^3.0.0",
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/slim": "^3.0.0",
     "framer-motion": "^11.0.3",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
@@ -29,9 +32,7 @@
     "react-router-dom": "^6.22.0",
     "react-tilt": "^1.0.2",
     "react-toastify": "^10.0.4",
-    "react-tsparticles": "^2.12.2",
     "react-type-animation": "^3.2.0",
-    "tsparticles": "^3.1.0",
     "typewriter-effect": "^2.21.0"
   },
   "devDependencies": {

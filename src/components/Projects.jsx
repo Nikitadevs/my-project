@@ -1,5 +1,5 @@
 // Projects.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -17,16 +17,19 @@ import {
   faCubes,
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import ProjectModal from './ProjectModal';
 import PropTypes from 'prop-types';
 import { Tilt } from 'react-tilt';
 import Card3D from './Card3D';
+
+// Lazy load ProjectModal
+const ProjectModal = lazy(() => import('./ProjectModal'));
 
 const Projects = ({ darkMode }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   const projects = [
     {
@@ -101,6 +104,16 @@ const Projects = ({ darkMode }) => {
     { id: 'frontend', label: 'Frontend' },
   ];
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     const filtered = projects.filter((project) => {
       const matchesCategory = filter === 'all' || project.category === filter;
@@ -112,29 +125,34 @@ const Projects = ({ darkMode }) => {
     setFilteredProjects(filtered);
   }, [filter, searchQuery]);
 
+  // Simplified animations for mobile
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: isMobile ? 0 : 0.2
       }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: isMobile ? 10 : 20 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.5,
+        duration: isMobile ? 0.3 : 0.5,
         ease: "easeOut"
       }
     }
   };
 
-  const cardVariants = {
+  const cardVariants = isMobile ? {
+    rest: { scale: 1 },
+    hover: { scale: 1 },
+    tap: { scale: 0.98 }
+  } : {
     rest: { 
       scale: 1,
       y: 0,
@@ -163,29 +181,24 @@ const Projects = ({ darkMode }) => {
     }
   };
 
-  const imageVariants = {
-    rest: { 
-      scale: 1,
-      filter: "brightness(0.9)",
-      transition: {
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    },
-    hover: { 
-      scale: 1.15,
-      filter: "brightness(1.1)",
-      transition: {
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
+  // Lazy loading image component
+  const LazyImage = ({ src, alt, className }) => {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        className={`${className} transition-opacity duration-300`}
+        onLoad={(e) => e.target.classList.remove('opacity-0')}
+        style={{ minHeight: '200px' }}
+      />
+    );
   };
 
-  const buttonVariants = {
-    rest: { scale: 1 },
-    hover: { scale: 1.05 },
-    tap: { scale: 0.95 }
+  LazyImage.propTypes = {
+    src: PropTypes.string.isRequired,
+    alt: PropTypes.string.isRequired,
+    className: PropTypes.string,
   };
 
   const getTechnologyIcon = (tech) => {
@@ -294,16 +307,16 @@ const Projects = ({ darkMode }) => {
                 <motion.div
                   key={project.id}
                   variants={itemVariants}
-                  layout
+                  layout={!isMobile}
                   initial="hidden"
                   animate="visible"
                   exit={{ opacity: 0, scale: 0.8 }}
                   className="h-full"
                 >
-                  <Card3D darkMode={darkMode} className="h-full group">
+                  <Card3D darkMode={darkMode} className="h-full group flex flex-col" disabled={isMobile}>
                     <motion.div
                       className="relative overflow-hidden rounded-t-2xl"
-                      whileHover="hover"
+                      whileHover={!isMobile && "hover"}
                       initial="rest"
                       animate="rest"
                     >
@@ -313,15 +326,10 @@ const Projects = ({ darkMode }) => {
                         whileHover={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}
                       />
-                      <motion.img
+                      <LazyImage
                         src={project.image}
                         alt={project.title}
-                        className="w-full h-48 object-cover"
-                        variants={{
-                          rest: { scale: 1, filter: 'brightness(0.9)' },
-                          hover: { scale: 1.1, filter: 'brightness(1.1)' }
-                        }}
-                        transition={{ duration: 0.4 }}
+                        className="w-full h-48 object-cover opacity-0"
                       />
                       <motion.div
                         className="absolute inset-x-0 bottom-0 p-4 z-20"
@@ -346,7 +354,7 @@ const Projects = ({ darkMode }) => {
                       </motion.div>
                     </motion.div>
 
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col flex-grow">
                       <motion.h3
                         className="text-xl font-bold mb-3 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent group-hover:from-purple-500 group-hover:to-blue-500"
                         whileHover={{ x: 5 }}
@@ -391,12 +399,12 @@ const Projects = ({ darkMode }) => {
                         )}
                       </div>
 
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-4 mt-auto">
                         <motion.a
                           href={project.links.github}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 flex-1 justify-center
                             ${darkMode
                               ? 'bg-gray-800 hover:bg-gray-700 text-white'
                               : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
@@ -411,7 +419,7 @@ const Projects = ({ darkMode }) => {
                           href={project.links.live}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white relative overflow-hidden"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white relative overflow-hidden flex-1 justify-center"
                           whileHover={{ scale: 1.05, y: -2 }}
                           whileTap={{ scale: 0.95 }}
                         >
@@ -465,7 +473,8 @@ const Projects = ({ darkMode }) => {
         </div>
       </div>
 
-      <AnimatePresence>
+      {/* Modal with Suspense */}
+      <Suspense fallback={null}>
         {selectedProject && (
           <ProjectModal
             project={selectedProject}
@@ -473,7 +482,7 @@ const Projects = ({ darkMode }) => {
             darkMode={darkMode}
           />
         )}
-      </AnimatePresence>
+      </Suspense>
     </section>
   );
 };
