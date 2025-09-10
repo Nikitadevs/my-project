@@ -55,19 +55,19 @@ const Contact = ({ darkMode }) => {
     {
       icon: <FaEnvelope className="text-2xl" />,
       label: 'Email',
-      value: 'n.verk06@gmail.com',
-      link: 'mailto:n.verk06@gmail.com',
+      value: 'nikita@example.com',
+      link: 'mailto:nikita@example.com',
     },
     {
       icon: <FaMapMarkerAlt className="text-2xl" />,
       label: 'Location',
-      value: 'Chicago, IL',
+      value: 'United States',
     },
     {
       icon: <FaPhone className="text-2xl" />,
       label: 'Phone',
-      value: '+1 847 702 5352',
-      link: 'tel:+18477025352',
+      value: '(123) 456-7890',
+      link: 'tel:+11234567890',
     },
   ];
 
