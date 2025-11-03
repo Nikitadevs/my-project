@@ -1,6 +1,7 @@
 // ProjectModal.jsx
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTimes,
@@ -11,10 +12,13 @@ import {
 import ImageCarousel from './ImageCarousel';
 import useFocusTrap from './useFocusTrap';
 
-const ProjectModal = ({ project, isOpen, onClose, darkMode }) => {
+const ProjectModal = ({ project, isOpen = false, onClose, darkMode = false }) => {
   const modalRef = useRef(null);
-  const { title, description, images, technologies, liveLink, codeLink } = project;
+  const { title, description, images = [], technologies = [], liveLink, codeLink } = project || {};
   useFocusTrap(modalRef, isOpen);
+
+  // Guard against undefined project
+  if (!project) return null;
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -134,9 +138,11 @@ const ProjectModal = ({ project, isOpen, onClose, darkMode }) => {
                 </h2>
 
                 {/* Image Carousel */}
-                <div className="mb-8 rounded-xl overflow-hidden shadow-xl">
-                  <ImageCarousel images={images} darkMode={darkMode} />
-                </div>
+                {images && images.length > 0 && (
+                  <div className="mb-8 rounded-xl overflow-hidden shadow-xl">
+                    <ImageCarousel images={images} darkMode={darkMode} />
+                  </div>
+                )}
 
                 {/* Description */}
                 <div className="prose prose-lg max-w-none mb-8">
@@ -148,23 +154,27 @@ const ProjectModal = ({ project, isOpen, onClose, darkMode }) => {
                 </div>
 
                 {/* Technologies */}
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold mb-4">Technologies Used</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {technologies.map((tech, index) => (
-                      <span
-                        key={index}
-                        className={`text-sm font-semibold px-3 py-1 rounded-full 
-                          ${darkMode
-                            ? 'bg-blue-600/30 text-blue-200 border border-blue-500/30'
-                            : 'bg-blue-100/80 text-blue-800 border border-blue-200/50'} 
-                          backdrop-blur-sm transition-colors duration-300 hover:bg-blue-500/20`}
-                      >
-                        {tech}
-                      </span>
-                    ))}
+                {technologies && technologies.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4">Technologies Used</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {technologies.map((tech, index) => (
+                        <motion.span
+                          key={index}
+                          className={`text-sm font-semibold px-3 py-1 rounded-full 
+                            ${darkMode
+                              ? 'bg-blue-600/30 text-blue-200 border border-blue-500/30'
+                              : 'bg-blue-100/80 text-blue-800 border border-blue-200/50'} 
+                            backdrop-blur-sm transition-colors duration-300`}
+                          whileHover={{ scale: 1.05, backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.2)' }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {tech}
+                        </motion.span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Links */}
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -213,4 +223,22 @@ const ProjectModal = ({ project, isOpen, onClose, darkMode }) => {
   );
 };
 
-export default ProjectModal;
+ProjectModal.propTypes = {
+  project: PropTypes.shape({
+    title: PropTypes.string,
+    description: PropTypes.string,
+    images: PropTypes.arrayOf(PropTypes.string),
+    technologies: PropTypes.arrayOf(PropTypes.string),
+    liveLink: PropTypes.string,
+    codeLink: PropTypes.string,
+    links: PropTypes.shape({
+      live: PropTypes.string,
+      github: PropTypes.string,
+    }),
+  }),
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func.isRequired,
+  darkMode: PropTypes.bool,
+};
+
+export default React.memo(ProjectModal);

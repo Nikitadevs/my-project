@@ -1,5 +1,6 @@
 // src/components/ThankYou.jsx
 
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
@@ -9,9 +10,9 @@ import PropTypes from 'prop-types';
 const ThankYou = ({ darkMode = false }) => {
   const navigate = useNavigate(); // Updated hook
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     navigate('/'); // Redirect to Home or adjust as needed
-  };
+  }, [navigate]);
 
   return (
     <motion.div
@@ -52,4 +53,8 @@ ThankYou.propTypes = {
   darkMode: PropTypes.bool,
 };
 
-export default ThankYou;
+ThankYou.defaultProps = {
+  darkMode: false,
+};
+
+export default React.memo(ThankYou);

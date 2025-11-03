@@ -1,5 +1,5 @@
 // ImageCarousel.jsx
-import { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -103,6 +103,11 @@ const ImageCarousel = ({ images }) => {
 
 ImageCarousel.propTypes = {
   images: PropTypes.arrayOf(PropTypes.string).isRequired,
+  darkMode: PropTypes.bool,
 };
 
-export default ImageCarousel;
+ImageCarousel.defaultProps = {
+  darkMode: false,
+};
+
+export default React.memo(ImageCarousel);

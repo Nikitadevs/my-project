@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import Card3D from './Card3D';
 
 const containerVariants = {
@@ -50,23 +51,29 @@ const Experience = ({ darkMode }) => {
 		>
 			<div className="container mx-auto px-3 md:px-4">
 				<div className="text-center mb-8 md:mb-16">
-					<h2 className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
+					<h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
 						${darkMode 
 							? 'from-blue-400 via-purple-400 to-pink-400'
 							: 'from-blue-600 via-purple-600 to-pink-600'}`}>
-						Experience
+						Work Experience
 					</h2>
-					<div className={`h-1 w-20 mx-auto rounded-full mb-8 bg-gradient-to-r
+					<div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
 						${darkMode
 							? 'from-blue-400 via-purple-400 to-pink-400'
 							: 'from-blue-600 via-purple-600 to-pink-600'}`} />
+					<p className={`text-center text-lg md:text-xl mb-12 max-w-2xl mx-auto ${
+						darkMode ? 'text-gray-400' : 'text-gray-600'
+					}`}>
+						Professional roles and career achievements
+					</p>
 				</div>
 
 				<motion.div
-					className="relative"
+					className="relative max-w-6xl mx-auto"
 					variants={containerVariants}
 					initial="hidden"
-					animate="visible"
+					whileInView="visible"
+					viewport={{ once: true, amount: 0.3 }}
 				>
 					{/* Timeline line */}
 					<div
@@ -91,27 +98,60 @@ const Experience = ({ darkMode }) => {
 									index % 2 === 0 ? 'md:text-right pl-8 md:pl-0' : 'md:text-left md:flex-row-reverse pl-8 md:pl-0'
 								}`}
 							>
-								{/* Timeline dot */}
+								{/* Timeline dot with liquid effect */}
 								<motion.div
-									className={`absolute left-[10px] md:left-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full transform md:-translate-x-1/2 z-10
+									className={`absolute left-[10px] md:left-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full transform md:-translate-x-1/2 z-10 relative
 										${darkMode ? 'bg-blue-500' : 'bg-blue-600'}`}
-									whileHover={{ scale: 1.5 }}
-									transition={{ duration: 0.2 }}
-								/>
+									whileHover={{ scale: 2 }}
+									transition={{ duration: 0.3 }}
+								>
+									{/* Pulsing ring */}
+									<motion.div
+										className={`absolute inset-0 rounded-full ${darkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
+										animate={{
+											scale: [1, 2, 1],
+											opacity: [0.6, 0, 0.6],
+										}}
+										transition={{
+											duration: 2,
+											repeat: Infinity,
+											ease: "easeInOut"
+										}}
+									/>
+								</motion.div>
 
 								<Card3D
 									darkMode={darkMode}
 									className={`md:w-[90%] ${index % 2 === 0 ? 'md:ml-auto' : ''}`}
 								>
-									<div className="p-4 md:p-6">
-										<h3 className="text-lg md:text-xl font-bold mb-2">{exp.role}</h3>
-										<p className={`text-lg mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+									<div className="p-4 md:p-6 relative">
+										{/* Floating gradient orb */}
+										<motion.div
+											className={`absolute w-32 h-32 rounded-full blur-3xl opacity-10 bg-gradient-to-r from-blue-400 to-purple-400`}
+											animate={{
+												x: [0, 20, 0],
+												y: [0, -20, 0],
+												scale: [1, 1.2, 1],
+											}}
+											transition={{
+												duration: 4,
+												repeat: Infinity,
+												ease: "easeInOut"
+											}}
+											style={{ top: '-10%', right: '-10%' }}
+										/>
+										
+										<h3 className="text-xl md:text-2xl font-bold mb-3 relative z-10 leading-tight">{exp.role}</h3>
+										<p className={`text-lg md:text-xl mb-2 relative z-10 font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
 											{exp.company}
 										</p>
-										<p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+										<motion.p 
+											className={`text-sm mb-4 relative z-10 inline-block px-3 py-1 rounded-full backdrop-blur-sm ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-200/50 text-gray-600'}`}
+											whileHover={{ scale: 1.05 }}
+										>
 											{exp.period}
-										</p>
-										<p className="mb-4">{exp.description}</p>
+										</motion.p>
+										<p className={`mb-6 relative z-10 text-base leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{exp.description}</p>
 										
 										<div className="space-y-2">
 											{exp.achievements.map((achievement, i) => (
@@ -168,4 +208,8 @@ const Experience = ({ darkMode }) => {
 	);
 };
 
-export default Experience;
+Experience.propTypes = {
+	darkMode: PropTypes.bool.isRequired,
+};
+
+export default React.memo(Experience);

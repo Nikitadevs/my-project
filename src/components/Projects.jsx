@@ -1,6 +1,7 @@
 // Projects.jsx
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faGithub,
@@ -17,7 +18,6 @@ import {
   faCubes,
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import PropTypes from 'prop-types';
 import { Tilt } from 'react-tilt';
 import Card3D from './Card3D';
 
@@ -225,16 +225,21 @@ const Projects = ({ darkMode }) => {
     >
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
+          <h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
             ${darkMode 
               ? 'from-blue-400 via-purple-400 to-pink-400'
               : 'from-blue-600 via-purple-600 to-pink-600'}`}>
             Featured Projects
           </h2>
-          <div className={`h-1 w-20 mx-auto rounded-full mb-8 bg-gradient-to-r
+          <div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
             ${darkMode
               ? 'from-blue-400 via-purple-400 to-pink-400'
               : 'from-blue-600 via-purple-600 to-pink-600'}`} />
+          <p className={`text-center text-lg md:text-xl max-w-2xl mx-auto ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Explore my portfolio of creative solutions and innovative applications
+          </p>
         </div>
 
         <div className="max-w-6xl mx-auto">
@@ -491,4 +496,4 @@ Projects.propTypes = {
   darkMode: PropTypes.bool.isRequired,
 };
 
-export default Projects;
+export default React.memo(Projects);

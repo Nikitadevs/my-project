@@ -1,6 +1,7 @@
 // src/components/Header.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -1339,4 +1340,9 @@ const Header = ({ darkMode, toggleDarkMode }) => {
   );
 };
 
-export default Header;
+Header.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+  toggleDarkMode: PropTypes.func.isRequired,
+};
+
+export default React.memo(Header);

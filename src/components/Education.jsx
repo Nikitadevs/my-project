@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
 	faGraduationCap,
@@ -57,37 +58,30 @@ const Education = ({ darkMode }) => {
 		>
 			<div className="container mx-auto px-3 md:px-4">
 				<div className="text-center mb-8 md:mb-16">
-					<h2 className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
+					<h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
 						${darkMode 
 							? 'from-blue-400 via-purple-400 to-pink-400'
 							: 'from-blue-600 via-purple-600 to-pink-600'}`}>
-						Education
+						Education & Certifications
 					</h2>
-					<div className={`h-1 w-20 mx-auto rounded-full mb-8 bg-gradient-to-r
+					<div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
 						${darkMode
 							? 'from-blue-400 via-purple-400 to-pink-400'
 							: 'from-blue-600 via-purple-600 to-pink-600'}`} />
+					<p className={`text-center text-lg md:text-xl mb-12 max-w-2xl mx-auto ${
+						darkMode ? 'text-gray-400' : 'text-gray-600'
+					}`}>
+						My academic background and learning journey
+					</p>
 				</div>
 
 				<motion.div
-					className="container mx-auto px-4"
+					className="max-w-6xl mx-auto"
 					variants={containerVariants}
 					initial="hidden"
-					animate="visible"
+					whileInView="visible"
+					viewport={{ once: true, amount: 0.3 }}
 				>
-					<motion.h2
-						variants={itemVariants}
-						className="text-4xl font-bold text-center mb-12"
-					>
-						<span className={`bg-gradient-to-r bg-clip-text text-transparent
-							${darkMode
-								? 'from-blue-400 via-purple-400 to-pink-400'
-								: 'from-blue-600 via-purple-600 to-pink-600'
-							}`}
-						>
-							Education & Certifications
-						</span>
-					</motion.h2>
 
 					<div className="relative">
 						{/* Timeline line */}
@@ -113,13 +107,27 @@ const Education = ({ darkMode }) => {
 										index % 2 === 0 ? 'md:text-right pl-8 md:pl-0' : 'md:text-left md:flex-row-reverse pl-8 md:pl-0'
 									}`}
 								>
-									{/* Timeline dot */}
+									{/* Timeline dot with liquid effect */}
 									<motion.div
-										className={`absolute left-[10px] md:left-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full transform md:-translate-x-1/2 z-10
+										className={`absolute left-[10px] md:left-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full transform md:-translate-x-1/2 z-10 relative
 											${darkMode ? 'bg-blue-500' : 'bg-blue-600'}`}
-										whileHover={{ scale: 1.5 }}
-										transition={{ duration: 0.2 }}
-									/>
+										whileHover={{ scale: 2 }}
+										transition={{ duration: 0.3 }}
+									>
+										{/* Pulsing ring */}
+										<motion.div
+											className={`absolute inset-0 rounded-full ${darkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
+											animate={{
+												scale: [1, 2, 1],
+												opacity: [0.6, 0, 0.6],
+											}}
+											transition={{
+												duration: 2,
+												repeat: Infinity,
+												ease: "easeInOut"
+											}}
+										/>
+									</motion.div>
 
 									<Card3D
 										darkMode={darkMode}
@@ -127,32 +135,48 @@ const Education = ({ darkMode }) => {
 									>
 										<div className="p-4 md:p-6">
 											<motion.div
-												className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-4
-													${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}
-												whileHover={{ scale: 1.1, y: -2 }}
-												transition={{ duration: 0.3 }}
+												className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center mb-4 relative backdrop-blur-xl shadow-lg
+													${darkMode ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10' : 'bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200/50'}`}
+												whileHover={{ 
+													scale: 1.05, 
+													y: -2,
+													boxShadow: darkMode 
+														? '0 12px 24px rgba(59, 130, 246, 0.3)'
+														: '0 12px 24px rgba(59, 130, 246, 0.2)'
+												}}
+												transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
 											>
+												{/* Subtle glow */}
+												<motion.div
+													className={`absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-purple-400 blur-xl opacity-0`}
+													whileHover={{ opacity: 0.4 }}
+													transition={{ duration: 0.3 }}
+												/>
 												<svg
 													xmlns="http://www.w3.org/2000/svg"
-													className={`h-6 w-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+													className={`h-6 w-6 md:h-7 md:w-7 relative z-10 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
 													fill="none"
 													viewBox="0 0 24 24"
 													stroke="currentColor"
+													strokeWidth={2}
 												>
 													<path d="M12 14l9-5-9-5-9 5 9 5z" />
 													<path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+													<path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
 												</svg>
 											</motion.div>
 
-											<h3 className="text-lg md:text-xl font-bold mb-2">{edu.degree}</h3>
-											<p className={`text-lg mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+											<h3 className="text-xl md:text-2xl font-bold mb-3 leading-tight">{edu.degree}</h3>
+											<p className={`text-lg md:text-xl mb-2 font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
 												{edu.school}
 											</p>
-											<p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+											<motion.p 
+												className={`text-sm mb-4 inline-block px-3 py-1 rounded-full backdrop-blur-sm ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-200/50 text-gray-600'}`}
+												whileHover={{ scale: 1.05 }}
+											>
 												{edu.period}
-											</p>
-											<p className="mb-4">{edu.description}</p>
+											</motion.p>
+											<p className={`mb-6 text-base leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{edu.description}</p>
 
 											<div className="space-y-2 mb-4">
 												{edu.achievements.map((achievement, i) => (
@@ -210,4 +234,8 @@ const Education = ({ darkMode }) => {
 	);
 };
 
-export default Education;
+Education.propTypes = {
+	darkMode: PropTypes.bool.isRequired,
+};
+
+export default React.memo(Education);

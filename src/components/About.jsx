@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import PropTypes from 'prop-types';
 import {
   faLightbulb,
   faRocket,
@@ -89,7 +90,7 @@ const About = ({ darkMode }) => {
     },
   };
 
-  const handleDownload = async (e) => {
+  const handleDownload = useCallback(async (e) => {
     e.preventDefault();
     setDownloadState('downloading');
     
@@ -115,7 +116,7 @@ const About = ({ darkMode }) => {
       setDownloadState('idle');
       setDownloadProgress(0);
     }, 3000);
-  };
+  }, []);
 
   const downloadVariants = {
     idle: {
@@ -206,7 +207,7 @@ const About = ({ darkMode }) => {
             viewport={{ once: true, amount: 0.3 }}
           >
             <motion.h2 
-              className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
+              className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
                 ${darkMode 
                   ? 'from-blue-400 via-purple-400 to-pink-400'
                   : 'from-blue-600 via-purple-600 to-pink-600'}`}
@@ -215,12 +216,20 @@ const About = ({ darkMode }) => {
               About Me
             </motion.h2>
             <motion.div 
-              className={`h-1 w-20 mx-auto rounded-full mb-8 bg-gradient-to-r
+              className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
                 ${darkMode
                   ? 'from-blue-400 via-purple-400 to-pink-400'
                   : 'from-blue-600 via-purple-600 to-pink-600'}`}
               variants={itemVariants}
             />
+            <motion.p
+              className={`text-center text-lg md:text-xl mb-12 max-w-2xl mx-auto ${
+                darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}
+              variants={itemVariants}
+            >
+              Get to know me better through my journey and achievements
+            </motion.p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
@@ -260,7 +269,7 @@ const About = ({ darkMode }) => {
                 variants={itemVariants}
                 className="text-3xl font-bold mb-4"
               >
-                Hi, I'm <span className="text-blue-500">NIkita</span>
+                Hi, I'm <span className="text-blue-500">Nikita</span>
               </motion.h3>
               
               <motion.p
@@ -294,20 +303,47 @@ const About = ({ darkMode }) => {
                   {resumeDetails.map((detail, index) => (
                     <motion.div
                       key={detail.label}
-                      className={`p-4 rounded-xl ${
-                        darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'
+                      className={`p-4 rounded-xl backdrop-blur-xl relative overflow-hidden ${
+                        darkMode 
+                          ? 'bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-white/10' 
+                          : 'bg-gradient-to-br from-white/60 to-blue-50/60 border border-white/50 shadow-lg'
                       }`}
-                      whileHover={{ y: -5 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ 
+                        y: -8,
+                        scale: 1.05,
+                        boxShadow: darkMode 
+                          ? '0 20px 40px rgba(59, 130, 246, 0.3)'
+                          : '0 20px 40px rgba(59, 130, 246, 0.2)',
+                        transition: { duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }
+                      }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <FontAwesomeIcon
-                        icon={detail.icon}
-                        className={`text-2xl mb-2 ${
-                          darkMode ? 'text-blue-400' : 'text-blue-500'
-                        }`}
+                      {/* Liquid gradient background */}
+                      <motion.div
+                        className="absolute inset-0 opacity-0"
+                        style={{
+                          background: `radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.2), transparent 70%)`,
+                        }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
                       />
-                      <h4 className="font-semibold">{detail.label}</h4>
-                      <p className={`text-sm ${
+                      
+                      <motion.div
+                        whileHover={{ scale: 1.1, y: -2 }}
+                        transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
+                      >
+                        <FontAwesomeIcon
+                          icon={detail.icon}
+                          className={`text-2xl mb-2 relative z-10 ${
+                            darkMode ? 'text-blue-400' : 'text-blue-500'
+                          }`}
+                        />
+                      </motion.div>
+                      <h4 className="font-semibold relative z-10">{detail.label}</h4>
+                      <p className={`text-sm relative z-10 ${
                         darkMode ? 'text-gray-400' : 'text-gray-600'
                       }`}>{detail.value}</p>
                     </motion.div>
@@ -409,30 +445,76 @@ const About = ({ darkMode }) => {
                 key={item.title}
                 variants={itemVariants}
                 className="h-full"
+                initial={{ opacity: 0, rotateY: -90 }}
+                animate={{ opacity: 1, rotateY: 0 }}
+                transition={{ 
+                  delay: index * 0.15,
+                  duration: 0.6,
+                  type: "spring",
+                  stiffness: 100
+                }}
               >
                 <Card3D darkMode={darkMode} className="h-full">
                   <motion.div
                     className="p-6 text-center relative overflow-hidden group"
-                    whileHover={{ y: -5 }}
-                    transition={{ duration: 0.2 }}
+                    whileHover={{ y: -8 }}
+                    transition={{ duration: 0.3 }}
                   >
+                    {/* Floating orbs in background */}
                     <motion.div
-                      className={`w-16 h-16 mx-auto mb-6 rounded-xl flex items-center justify-center bg-gradient-to-r ${item.color} group-hover:scale-110 transition-transform duration-300`}
+                      className={`absolute w-32 h-32 rounded-full blur-3xl opacity-20 bg-gradient-to-r ${item.color}`}
+                      animate={{
+                        x: [0, 20, 0],
+                        y: [0, -20, 0],
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      style={{ top: '-20%', left: '-20%' }}
+                    />
+                    
+                    <motion.div
+                      className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-gradient-to-r ${item.color} shadow-lg relative`}
+                      whileHover={{ 
+                        scale: 1.1,
+                        y: -4,
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                        transition: { duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }
+                      }}
                     >
+                      {/* Subtle glow effect */}
+                      <motion.div
+                        className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${item.color} blur-xl opacity-0`}
+                        whileHover={{ opacity: 0.6 }}
+                        transition={{ duration: 0.3 }}
+                      />
                       <FontAwesomeIcon
                         icon={item.icon}
-                        className="text-2xl text-white"
+                        className="text-2xl text-white relative z-10"
                       />
                     </motion.div>
-                    <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                    
+                    <motion.h3 
+                      className="text-xl font-bold mb-3"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      {item.title}
+                    </motion.h3>
                     <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
                       {item.description}
                     </p>
-                    <div className={`text-sm font-semibold ${
-                      darkMode ? 'text-blue-400' : 'text-blue-600'
-                    }`}>
+                    <motion.div 
+                      className={`text-sm font-semibold px-4 py-2 rounded-full inline-block bg-gradient-to-r ${item.color} text-white`}
+                      whileHover={{ 
+                        scale: 1.1,
+                        boxShadow: `0 10px 30px rgba(0, 0, 0, 0.3)`
+                      }}
+                    >
                       {item.stats}
-                    </div>
+                    </motion.div>
                   </motion.div>
                 </Card3D>
               </motion.div>
@@ -443,4 +525,8 @@ const About = ({ darkMode }) => {
   );
 };
 
-export default About;
+About.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+};
+
+export default React.memo(About);

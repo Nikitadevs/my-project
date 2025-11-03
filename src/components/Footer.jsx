@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 
 const Footer = ({ darkMode }) => {
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   return (
     <footer
@@ -75,19 +79,55 @@ const Footer = ({ darkMode }) => {
             </p>
           </motion.div>
 
-          {/* Back to Top Button */}
+          {/* Back to Top Button with liquid effects */}
           <motion.button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            whileHover={{ scale: 1.1, y: -2 }}
+            onClick={scrollToTop}
+            whileHover={{ scale: 1.1, y: -4 }}
             whileTap={{ scale: 0.9 }}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 flex items-center space-x-2
+            aria-label="Back to top"
+            className={`px-6 py-3 rounded-2xl text-sm font-medium flex items-center space-x-2 relative overflow-hidden shadow-lg
               ${darkMode
-                ? 'bg-white/10 hover:bg-white/20 text-white'
-                : 'bg-gray-200/50 hover:bg-gray-300/50 text-gray-800'
-              } backdrop-blur-sm`}
+                ? 'bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-white/10 text-white'
+                : 'bg-gradient-to-r from-blue-100/50 to-purple-100/50 border border-gray-200/50 text-gray-800'
+              } backdrop-blur-xl`}
           >
-            <span>Back to Top</span>
-            <FontAwesomeIcon icon={faArrowUp} className="text-sm" />
+            {/* Liquid shimmer effect */}
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)`,
+                transform: 'translateX(-100%)',
+              }}
+              whileHover={{
+                transform: ['translateX(-100%)', 'translateX(100%)'],
+              }}
+              transition={{
+                duration: 0.8,
+                ease: "easeInOut",
+              }}
+            />
+            
+            {/* Pulsing glow */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-purple-400 blur-xl opacity-0"
+              whileHover={{ opacity: 0.3 }}
+              transition={{ duration: 0.3 }}
+            />
+            
+            <span className="relative z-10">Back to Top</span>
+            <motion.span
+              className="relative z-10"
+              animate={{ 
+                y: [-2, 2, -2],
+              }}
+              transition={{ 
+                duration: 1.5, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
+            >
+              <FontAwesomeIcon icon={faArrowUp} className="text-sm" />
+            </motion.span>
           </motion.button>
         </div>
       </div>
@@ -95,4 +135,8 @@ const Footer = ({ darkMode }) => {
   );
 };
 
-export default Footer;
+Footer.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+};
+
+export default React.memo(Footer);

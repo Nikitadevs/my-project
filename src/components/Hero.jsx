@@ -564,28 +564,61 @@ const Hero = ({
             Turning ideas into reality through clean code and elegant design.
           </motion.p>
 
-          {/* Enhanced CTA buttons */}
+          {/* Enhanced CTA buttons with liquid effects */}
           <motion.div
             variants={itemVariants}
             className="flex flex-wrap justify-center gap-4"
           >
-            <Card3D darkMode={darkMode}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Link
                 to="/projects"
-                className={`px-8 py-4 rounded-xl font-semibold inline-flex items-center gap-2 relative overflow-hidden group
+                className={`px-8 py-4 rounded-2xl font-semibold inline-flex items-center gap-2 relative overflow-hidden group backdrop-blur-xl
                   ${darkMode
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-blue-600 text-white'
-                  }`}
+                    ? 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/20'
+                    : 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/30'
+                  } shadow-2xl`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: isHovered ? '100%' : '-100%' }}
-                  transition={{ duration: 0.8, ease: 'easeInOut' }}
+                {/* Animated gradient overlay */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 opacity-0"
+                  whileHover={{ opacity: 0.3 }}
+                  transition={{ duration: 0.3 }}
                 />
+                
+                {/* Liquid shimmer effect */}
+                <motion.div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)`,
+                    transform: 'translateX(-100%)',
+                  }}
+                  animate={isHovered ? {
+                    transform: ['translateX(-100%)', 'translateX(100%)'],
+                  } : {}}
+                  transition={{
+                    duration: 0.8,
+                    ease: "easeInOut",
+                  }}
+                />
+
+                {/* Pulsing glow */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-400 blur-xl opacity-0"
+                  animate={{
+                    opacity: isHovered ? [0, 0.5, 0] : 0,
+                    scale: isHovered ? [1, 1.2, 1] : 1,
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: isHovered ? Infinity : 0,
+                  }}
+                />
+
                 <motion.div
                   className="relative z-10 flex items-center gap-2"
                   animate={{
@@ -600,53 +633,55 @@ const Hero = ({
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     animate={{ 
-                      x: isHovered ? 5 : 0,
-                      rotate: isHovered ? 45 : 0,
+                      x: isHovered ? 4 : 0,
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
                   >
                     <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                   </motion.svg>
                 </motion.div>
               </Link>
-            </Card3D>
+            </motion.div>
 
-            <Card3D darkMode={darkMode}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Link
                 to="/contact"
-                className={`px-8 py-4 rounded-xl font-semibold inline-flex items-center gap-2 relative overflow-hidden
+                className={`px-8 py-4 rounded-2xl font-semibold inline-flex items-center gap-2 relative overflow-hidden group backdrop-blur-xl
                   ${darkMode
-                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                    : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50'
-                  } transition-all duration-300`}
+                    ? 'bg-gray-800/50 text-white border border-white/20 hover:bg-gray-700/50'
+                    : 'bg-white/50 text-gray-900 border border-gray-200/50 hover:bg-white/70'
+                  } transition-all duration-300 shadow-xl`}
               >
+                {/* Ripple effect on hover */}
+                <motion.div
+                  className={`absolute inset-0 rounded-2xl ${
+                    darkMode ? 'bg-white/10' : 'bg-gray-900/5'
+                  }`}
+                  initial={{ scale: 0, opacity: 1 }}
+                  whileHover={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.6 }}
+                />
+
                 <motion.div
                   className="relative z-10 flex items-center gap-2"
                   whileHover={{ scale: 1.05 }}
                 >
                   <span>Contact Me</span>
-                  <motion.svg
+                  <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
                     viewBox="0 0 20 20"
                     fill="currentColor"
-                    animate={{ 
-                      y: [0, -2, 0],
-                      rotate: [0, 5, 0],
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{ 
-                      duration: 1.5, 
-                      repeat: Infinity, 
-                      ease: "easeInOut" 
-                    }}
                   >
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </motion.svg>
+                  </svg>
                 </motion.div>
               </Link>
-            </Card3D>
+            </motion.div>
           </motion.div>
         </motion.div>
       </motion.div>
@@ -657,6 +692,11 @@ const Hero = ({
 Hero.propTypes = {
   darkMode: PropTypes.bool,
   backgroundImage: PropTypes.string,
+};
+
+Hero.defaultProps = {
+  darkMode: false,
+  backgroundImage: '/path-to-your-image.jpg',
 };
 
 export default React.memo(Hero);

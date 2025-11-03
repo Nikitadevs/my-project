@@ -1,6 +1,7 @@
 // Import necessary dependencies
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCode,
@@ -222,16 +223,21 @@ const Skills = ({ darkMode }) => {
     >
       <div className="container mx-auto px-3 md:px-4">
         <div className="text-center mb-8 md:mb-16">
-          <h2 className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
+          <h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
             ${darkMode 
               ? 'from-blue-400 via-purple-400 to-pink-400'
               : 'from-blue-600 via-purple-600 to-pink-600'}`}>
             Skills & Technologies
           </h2>
-          <div className={`h-1 w-20 mx-auto rounded-full mb-8 bg-gradient-to-r
+          <div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
             ${darkMode
               ? 'from-blue-400 via-purple-400 to-pink-400'
               : 'from-blue-600 via-purple-600 to-pink-600'}`} />
+          <p className={`text-center text-lg md:text-xl max-w-2xl mx-auto ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Discover my technical skills and proficiency levels
+          </p>
         </div>
 
         <motion.div
@@ -294,33 +300,70 @@ const Skills = ({ darkMode }) => {
                   }
                 }}
               >
-                <motion.div
-                  variants={glassVariants}
-                  initial="initial"
-                  animate="animate"
-                  className={`p-4 md:p-6 rounded-2xl backdrop-blur-lg shadow-xl border h-full
-                    ${darkMode
-                      ? 'bg-gray-900/70 border-gray-700 hover:border-blue-500/50'
-                      : 'bg-white/70 border-gray-200 hover:border-blue-500/50'
-                    } transition-colors duration-300`}
-                  style={{ transformStyle: 'preserve-3d' }}
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <motion.div
-                        className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center bg-gradient-to-r ${skill.color} shadow-lg`}
-                        whileHover={{ scale: 1.1, y: -2 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <FontAwesomeIcon icon={skill.icon} className="text-2xl text-white" />
-                      </motion.div>
-                      <div>
-                        <h3 className="text-xl font-bold">{skill.name}</h3>
-                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {skill.experience}
-                        </p>
+                  <motion.div
+                    variants={glassVariants}
+                    initial="initial"
+                    animate="animate"
+                    className={`p-4 md:p-6 rounded-2xl backdrop-blur-xl shadow-2xl border h-full relative overflow-hidden
+                      ${darkMode
+                        ? 'bg-gray-900/50 border-white/10'
+                        : 'bg-white/50 border-gray-200/50'
+                      } transition-colors duration-300`}
+                    style={{ 
+                      transformStyle: 'preserve-3d',
+                      boxShadow: darkMode
+                        ? '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)'
+                        : '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    {/* Liquid gradient background on hover */}
+                    <motion.div
+                      className={`absolute inset-0 opacity-0 bg-gradient-to-br ${skill.color}`}
+                      whileHover={{ opacity: 0.1 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    
+                    {/* Animated shimmer */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)`,
+                        transform: 'translateX(-100%)',
+                      }}
+                      whileHover={{
+                        transform: ['translateX(-100%)', 'translateX(100%)'],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        ease: "easeInOut",
+                      }}
+                    />
+                    <div className="flex items-start justify-between mb-6 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <motion.div
+                          className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-gradient-to-r ${skill.color} shadow-lg relative`}
+                          whileHover={{ 
+                            scale: 1.08, 
+                            y: -3,
+                            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.3)',
+                          }}
+                          transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
+                        >
+                          {/* Subtle glow */}
+                          <motion.div
+                            className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${skill.color} blur-xl opacity-0`}
+                            whileHover={{ opacity: 0.6 }}
+                            transition={{ duration: 0.3 }}
+                          />
+                          <FontAwesomeIcon icon={skill.icon} className="text-2xl text-white relative z-10" />
+                        </motion.div>
+                        <div>
+                          <h3 className="text-xl font-bold">{skill.name}</h3>
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {skill.experience}
+                          </p>
+                        </div>
                       </div>
-                    </div>
                     <div className="flex items-center gap-2">
                       {skill.certifications && skill.certifications.length > 0 && (
                         <motion.div
@@ -337,25 +380,42 @@ const Skills = ({ darkMode }) => {
                     </div>
                   </div>
 
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        Proficiency
-                      </span>
-                      <span className={`text-sm font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                        {skill.level}%
-                      </span>
+                    <div className="mb-6 relative z-10">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Proficiency
+                        </span>
+                        <motion.span 
+                          className={`text-sm font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          {skill.level}%
+                        </motion.span>
+                      </div>
+                      <div className={`h-3 rounded-full relative overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-200/50'} backdrop-blur-sm`}>
+                        <motion.div
+                          className={`h-full rounded-full bg-gradient-to-r ${skill.color} relative`}
+                          initial="initial"
+                          animate="animate"
+                          variants={progressBarVariants}
+                          custom={skill.level}
+                        >
+                          {/* Animated shimmer on progress bar */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                            animate={{
+                              x: ['-100%', '200%'],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          />
+                        </motion.div>
+                      </div>
                     </div>
-                    <div className={`h-2 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <motion.div
-                        className={`h-full rounded-full bg-gradient-to-r ${skill.color}`}
-                        initial="initial"
-                        animate="animate"
-                        variants={progressBarVariants}
-                        custom={skill.level}
-                      />
-                    </div>
-                  </div>
 
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -507,4 +567,8 @@ const Skills = ({ darkMode }) => {
   );
 };
 
-export default Skills;
+Skills.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+};
+
+export default React.memo(Skills);
