@@ -217,28 +217,109 @@ const Skills = ({ darkMode }) => {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className={`py-12 md:py-20 ${
-        darkMode ? 'bg-gray-800/50 text-white' : 'bg-gray-100/50 text-gray-900'
-      }`}
+      className={`relative py-12 md:py-20 overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-gray-50 to-white text-gray-900'
+        }`}
     >
-      <div className="container mx-auto px-3 md:px-4">
-        <div className="text-center mb-8 md:mb-16">
-          <h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
-            ${darkMode 
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className={`absolute top-20 -right-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className={`absolute bottom-40 -left-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/10' : 'bg-purple-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.3, 1],
+            x: [0, -50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+      <div className="container mx-auto px-3 md:px-4 relative z-10">
+        <motion.div
+          className="text-center mb-12 md:mb-20"
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Section Badge */}
+          <motion.div
+            className="inline-block mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode
+              ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+              : 'bg-blue-100 text-blue-700 border border-blue-200'
+              }`}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
+              </svg>
+              My Expertise
+            </span>
+          </motion.div>
+
+          {/* Enhanced Heading */}
+          <motion.h2
+            className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <span className={`bg-gradient-to-r bg-clip-text text-transparent ${darkMode
               ? 'from-blue-400 via-purple-400 to-pink-400'
-              : 'from-blue-600 via-purple-600 to-pink-600'}`}>
-            Skills & Technologies
-          </h2>
-          <div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
-            ${darkMode
-              ? 'from-blue-400 via-purple-400 to-pink-400'
-              : 'from-blue-600 via-purple-600 to-pink-600'}`} />
-          <p className={`text-center text-lg md:text-xl max-w-2xl mx-auto ${
-            darkMode ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            Discover my technical skills and proficiency levels
-          </p>
-        </div>
+              : 'from-blue-600 via-purple-600 to-pink-600'
+              }`}>
+              Skills & Technologies
+            </span>
+          </motion.h2>
+
+          {/* Animated Underline */}
+          <motion.div
+            className={`h-1.5 w-24 mx-auto rounded-full mb-8 bg-gradient-to-r shadow-lg ${darkMode
+              ? 'from-blue-400 via-purple-400 to-pink-400 shadow-blue-500/50'
+              : 'from-blue-600 via-purple-600 to-pink-600 shadow-purple-500/50'
+              }`}
+            initial={{ width: 0 }}
+            whileInView={{ width: 96 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          />
+
+          {/* Enhanced Description */}
+          <motion.p
+            className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'
+              }`}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            Explore my <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>technical proficiency</span> across various technologies and frameworks
+          </motion.p>
+        </motion.div>
 
         <motion.div
           variants={itemVariants}
@@ -285,11 +366,10 @@ const Skills = ({ darkMode }) => {
                 whileHover="hover"
                 whileTap="tap"
                 onClick={() => setSelectedSkill(skill)}
-                className={`relative cursor-pointer focus-within:ring-2 focus-within:ring-offset-2 ${
-                  darkMode 
-                    ? 'focus-within:ring-blue-500 focus-within:ring-offset-gray-800' 
-                    : 'focus-within:ring-blue-500'
-                } rounded-2xl`}
+                className={`relative cursor-pointer focus-within:ring-2 focus-within:ring-offset-2 ${darkMode
+                  ? 'focus-within:ring-blue-500 focus-within:ring-offset-gray-800'
+                  : 'focus-within:ring-blue-500'
+                  } rounded-2xl`}
                 style={{ transformStyle: 'preserve-3d' }}
                 tabIndex={0}
                 role="button"
@@ -300,70 +380,70 @@ const Skills = ({ darkMode }) => {
                   }
                 }}
               >
-                  <motion.div
-                    variants={glassVariants}
-                    initial="initial"
-                    animate="animate"
-                    className={`p-4 md:p-6 rounded-2xl backdrop-blur-xl shadow-2xl border h-full relative overflow-hidden
+                <motion.div
+                  variants={glassVariants}
+                  initial="initial"
+                  animate="animate"
+                  className={`p-4 md:p-6 rounded-2xl backdrop-blur-xl shadow-2xl border h-full relative overflow-hidden
                       ${darkMode
-                        ? 'bg-gray-900/50 border-white/10'
-                        : 'bg-white/50 border-gray-200/50'
-                      } transition-colors duration-300`}
-                    style={{ 
-                      transformStyle: 'preserve-3d',
-                      boxShadow: darkMode
-                        ? '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)'
-                        : '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.5)',
+                      ? 'bg-gray-900/50 border-white/10'
+                      : 'bg-white/50 border-gray-200/50'
+                    } transition-colors duration-300`}
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    boxShadow: darkMode
+                      ? '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)'
+                      : '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.5)',
+                  }}
+                >
+                  {/* Liquid gradient background on hover */}
+                  <motion.div
+                    className={`absolute inset-0 opacity-0 bg-gradient-to-br ${skill.color}`}
+                    whileHover={{ opacity: 0.1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+
+                  {/* Animated shimmer */}
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)`,
+                      transform: 'translateX(-100%)',
                     }}
-                  >
-                    {/* Liquid gradient background on hover */}
-                    <motion.div
-                      className={`absolute inset-0 opacity-0 bg-gradient-to-br ${skill.color}`}
-                      whileHover={{ opacity: 0.1 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                    
-                    {/* Animated shimmer */}
-                    <motion.div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%)`,
-                        transform: 'translateX(-100%)',
-                      }}
-                      whileHover={{
-                        transform: ['translateX(-100%)', 'translateX(100%)'],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        ease: "easeInOut",
-                      }}
-                    />
-                    <div className="flex items-start justify-between mb-6 relative z-10">
-                      <div className="flex items-center gap-4">
+                    whileHover={{
+                      transform: ['translateX(-100%)', 'translateX(100%)'],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  <div className="flex items-start justify-between mb-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <motion.div
+                        className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-gradient-to-r ${skill.color} shadow-lg relative`}
+                        whileHover={{
+                          scale: 1.08,
+                          y: -3,
+                          boxShadow: '0 12px 24px rgba(0, 0, 0, 0.3)',
+                        }}
+                        transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
+                      >
+                        {/* Subtle glow */}
                         <motion.div
-                          className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-gradient-to-r ${skill.color} shadow-lg relative`}
-                          whileHover={{ 
-                            scale: 1.08, 
-                            y: -3,
-                            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.3)',
-                          }}
-                          transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
-                        >
-                          {/* Subtle glow */}
-                          <motion.div
-                            className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${skill.color} blur-xl opacity-0`}
-                            whileHover={{ opacity: 0.6 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                          <FontAwesomeIcon icon={skill.icon} className="text-2xl text-white relative z-10" />
-                        </motion.div>
-                        <div>
-                          <h3 className="text-xl font-bold">{skill.name}</h3>
-                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {skill.experience}
-                          </p>
-                        </div>
+                          className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${skill.color} blur-xl opacity-0`}
+                          whileHover={{ opacity: 0.6 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                        <FontAwesomeIcon icon={skill.icon} className="text-2xl text-white relative z-10" />
+                      </motion.div>
+                      <div>
+                        <h3 className="text-xl font-bold">{skill.name}</h3>
+                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {skill.experience}
+                        </p>
                       </div>
+                    </div>
                     <div className="flex items-center gap-2">
                       {skill.certifications && skill.certifications.length > 0 && (
                         <motion.div
@@ -380,42 +460,42 @@ const Skills = ({ darkMode }) => {
                     </div>
                   </div>
 
-                    <div className="mb-6 relative z-10">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          Proficiency
-                        </span>
-                        <motion.span 
-                          className={`text-sm font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
-                          animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          {skill.level}%
-                        </motion.span>
-                      </div>
-                      <div className={`h-3 rounded-full relative overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-200/50'} backdrop-blur-sm`}>
-                        <motion.div
-                          className={`h-full rounded-full bg-gradient-to-r ${skill.color} relative`}
-                          initial="initial"
-                          animate="animate"
-                          variants={progressBarVariants}
-                          custom={skill.level}
-                        >
-                          {/* Animated shimmer on progress bar */}
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                            animate={{
-                              x: ['-100%', '200%'],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                            }}
-                          />
-                        </motion.div>
-                      </div>
+                  <div className="mb-6 relative z-10">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Proficiency
+                      </span>
+                      <motion.span
+                        className={`text-sm font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        {skill.level}%
+                      </motion.span>
                     </div>
+                    <div className={`h-3 rounded-full relative overflow-hidden ${darkMode ? 'bg-gray-700/50' : 'bg-gray-200/50'} backdrop-blur-sm`}>
+                      <motion.div
+                        className={`h-full rounded-full bg-gradient-to-r ${skill.color} relative`}
+                        initial="initial"
+                        animate="animate"
+                        variants={progressBarVariants}
+                        custom={skill.level}
+                      >
+                        {/* Animated shimmer on progress bar */}
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                          animate={{
+                            x: ['-100%', '200%'],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+                      </motion.div>
+                    </div>
+                  </div>
 
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -473,9 +553,8 @@ const Skills = ({ darkMode }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className={`relative max-w-2xl w-full p-4 md:p-6 rounded-2xl shadow-2xl ${
-                darkMode ? 'bg-gray-900' : 'bg-white'
-              }`}
+              className={`relative max-w-2xl w-full p-4 md:p-6 rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-900' : 'bg-white'
+                }`}
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-start gap-6 mb-8">
@@ -513,9 +592,8 @@ const Skills = ({ darkMode }) => {
                       {selectedSkill.certifications.map((cert, index) => (
                         <div
                           key={index}
-                          className={`p-3 rounded-xl ${
-                            darkMode ? 'bg-gray-800' : 'bg-gray-100'
-                          }`}
+                          className={`p-3 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-100'
+                            }`}
                         >
                           {cert}
                         </div>
@@ -533,9 +611,8 @@ const Skills = ({ darkMode }) => {
                     {selectedSkill.details.map((detail, index) => (
                       <div
                         key={index}
-                        className={`p-3 rounded-xl flex items-center gap-2 ${
-                          darkMode ? 'bg-gray-800' : 'bg-gray-100'
-                        }`}
+                        className={`p-3 rounded-xl flex items-center gap-2 ${darkMode ? 'bg-gray-800' : 'bg-gray-100'
+                          }`}
                       >
                         <FontAwesomeIcon
                           icon={faCheck}

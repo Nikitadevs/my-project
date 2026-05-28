@@ -59,7 +59,7 @@ const Contact = ({ darkMode }) => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
+
     // Validate form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -69,14 +69,14 @@ const Contact = ({ darkMode }) => {
 
     setIsSubmitting(true);
     setErrors({});
-    
+
     try {
       // Simulate form submission
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
-      
+
       // Reset status after 3 seconds
       setTimeout(() => setSubmitStatus(null), 3000);
     } catch (error) {
@@ -123,9 +123,40 @@ const Contact = ({ darkMode }) => {
   ];
 
   return (
-    <section id="contact" className={`py-20 ${darkMode ? 'bg-gray-800/50 text-white' : 'bg-gray-100/50 text-gray-900'}`}>
+    <section id="contact" className={`relative py-20 overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-gray-50 to-white text-gray-900'}`}>
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className={`absolute top-20 -right-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className={`absolute bottom-40 -left-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/10' : 'bg-purple-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.3, 1],
+            x: [0, -50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
       <motion.div
-        className="container mx-auto px-4"
+        className="container mx-auto px-4 relative z-10"
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -133,27 +164,72 @@ const Contact = ({ darkMode }) => {
       >
         <div className="max-w-6xl mx-auto">
           <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-center mb-12 md:mb-20"
+            initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
-              ${darkMode 
+            {/* Section Badge */}
+            <motion.div
+              className="inline-block mb-6"
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode
+                ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                }`}>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+                Let's Connect
+              </span>
+            </motion.div>
+
+            {/* Enhanced Heading */}
+            <motion.h2
+              className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <span className={`bg-gradient-to-r bg-clip-text text-transparent ${darkMode
                 ? 'from-blue-400 via-purple-400 to-pink-400'
-                : 'from-blue-600 via-purple-600 to-pink-600'}`}>
-              Get In Touch
-            </h2>
-            <div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
-              ${darkMode
-                ? 'from-blue-400 via-purple-400 to-pink-400'
-                : 'from-blue-600 via-purple-600 to-pink-600'}`} />
-            <p className={`text-center text-lg md:text-xl mb-12 max-w-2xl mx-auto ${
-              darkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Have a question or want to work together? Let's connect!
-            </p>
+                : 'from-blue-600 via-purple-600 to-pink-600'
+                }`}>
+                Get In Touch
+              </span>
+            </motion.h2>
+
+            {/* Animated Underline */}
+            <motion.div
+              className={`h-1.5 w-24 mx-auto rounded-full mb-8 bg-gradient-to-r shadow-lg ${darkMode
+                ? 'from-blue-400 via-purple-400 to-pink-400 shadow-blue-500/50'
+                : 'from-blue-600 via-purple-600 to-pink-600 shadow-purple-500/50'
+                }`}
+              initial={{ width: 0 }}
+              whileInView={{ width: 96 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            />
+
+            {/* Enhanced Description */}
+            <motion.p
+              className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+            >
+              Have a question or want to <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>work together</span>? Let's connect!
+            </motion.p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -274,12 +350,12 @@ const Contact = ({ darkMode }) => {
                         background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)`,
                       }}
                       animate={{
-                        transform: isSubmitting 
+                        transform: isSubmitting
                           ? ['translateX(-100%)', 'translateX(100%)']
                           : 'translateX(-100%)',
                       }}
-                      transition={{ 
-                        duration: 1, 
+                      transition={{
+                        duration: 1,
                         repeat: isSubmitting ? Infinity : 0,
                         ease: "easeInOut"
                       }}
@@ -302,14 +378,14 @@ const Contact = ({ darkMode }) => {
                       {isSubmitting ? (
                         <>
                           <motion.span
-                            animate={{ 
+                            animate={{
                               x: [0, 3, 0],
                               y: [-1, 1, -1],
                             }}
-                            transition={{ 
-                              duration: 0.8, 
-                              repeat: Infinity, 
-                              ease: "easeInOut" 
+                            transition={{
+                              duration: 0.8,
+                              repeat: Infinity,
+                              ease: "easeInOut"
                             }}
                           >
                             <FaPaperPlane className="text-lg" />
@@ -319,7 +395,7 @@ const Contact = ({ darkMode }) => {
                       ) : (
                         <>
                           <motion.span
-                            whileHover={{ 
+                            whileHover={{
                               x: 3,
                             }}
                             transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
@@ -420,12 +496,11 @@ const Contact = ({ darkMode }) => {
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`p-4 rounded-xl transition-colors backdrop-blur-xl relative overflow-hidden shadow-md ${
-                          darkMode 
-                            ? 'bg-gray-800/50 border border-white/10' 
-                            : 'bg-gray-100/50 border border-gray-200/50'
-                        } ${social.color}`}
-                        whileHover={{ 
+                        className={`p-4 rounded-xl transition-colors backdrop-blur-xl relative overflow-hidden shadow-md ${darkMode
+                          ? 'bg-gray-800/50 border border-white/10'
+                          : 'bg-gray-100/50 border border-gray-200/50'
+                          } ${social.color}`}
+                        whileHover={{
                           scale: 1.1,
                           y: -3,
                           boxShadow: darkMode
@@ -440,9 +515,8 @@ const Contact = ({ darkMode }) => {
                       >
                         {/* Ripple effect on hover */}
                         <motion.div
-                          className={`absolute inset-0 rounded-xl ${
-                            darkMode ? 'bg-blue-500/20' : 'bg-blue-500/10'
-                          }`}
+                          className={`absolute inset-0 rounded-xl ${darkMode ? 'bg-blue-500/20' : 'bg-blue-500/10'
+                            }`}
                           initial={{ scale: 0, opacity: 1 }}
                           whileHover={{ scale: 2, opacity: 0 }}
                           transition={{ duration: 0.6 }}

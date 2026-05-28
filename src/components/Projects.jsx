@@ -98,10 +98,10 @@ const Projects = ({ darkMode }) => {
   ];
 
   const categories = [
-    { id: 'all', label: 'All Projects' },
-    { id: 'devops', label: 'DevOps' },
-    { id: 'backend', label: 'Backend' },
-    { id: 'frontend', label: 'Frontend' },
+    { id: 'all', label: 'All Projects', icon: faCubes },
+    { id: 'devops', label: 'DevOps', icon: faDocker },
+    { id: 'backend', label: 'Backend', icon: faServer },
+    { id: 'frontend', label: 'Frontend', icon: faCode },
   ];
 
   // Check if device is mobile
@@ -153,7 +153,7 @@ const Projects = ({ darkMode }) => {
     hover: { scale: 1 },
     tap: { scale: 0.98 }
   } : {
-    rest: { 
+    rest: {
       scale: 1,
       y: 0,
       transition: {
@@ -162,7 +162,7 @@ const Projects = ({ darkMode }) => {
         damping: 20
       }
     },
-    hover: { 
+    hover: {
       scale: 1.03,
       y: -10,
       transition: {
@@ -171,7 +171,7 @@ const Projects = ({ darkMode }) => {
         damping: 20
       }
     },
-    tap: { 
+    tap: {
       scale: 0.98,
       transition: {
         type: "spring",
@@ -219,28 +219,108 @@ const Projects = ({ darkMode }) => {
   return (
     <section
       id="projects"
-      className={`py-20 ${
-        darkMode ? 'bg-gray-800/50 text-white' : 'bg-gray-100/50 text-gray-900'
-      }`}
+      className={`relative py-20 overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-gray-50 to-white text-gray-900'
+        }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent
-            ${darkMode 
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className={`absolute top-20 -right-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className={`absolute bottom-40 -left-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/10' : 'bg-purple-200/30'
+            }`}
+          animate={{
+            scale: [1, 1.3, 1],
+            x: [0, -50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+      <div className="container mx-auto px-4 relative z-10">
+        <motion.div
+          className="text-center mb-12 md:mb-20"
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Section Badge */}
+          <motion.div
+            className="inline-block mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode
+              ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+              : 'bg-blue-100 text-blue-700 border border-blue-200'
+              }`}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+              </svg>
+              My Work
+            </span>
+          </motion.div>
+
+          {/* Enhanced Heading */}
+          <motion.h2
+            className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <span className={`bg-gradient-to-r bg-clip-text text-transparent ${darkMode
               ? 'from-blue-400 via-purple-400 to-pink-400'
-              : 'from-blue-600 via-purple-600 to-pink-600'}`}>
-            Featured Projects
-          </h2>
-          <div className={`h-1 w-20 mx-auto rounded-full mb-6 bg-gradient-to-r
-            ${darkMode
-              ? 'from-blue-400 via-purple-400 to-pink-400'
-              : 'from-blue-600 via-purple-600 to-pink-600'}`} />
-          <p className={`text-center text-lg md:text-xl max-w-2xl mx-auto ${
-            darkMode ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            Explore my portfolio of creative solutions and innovative applications
-          </p>
-        </div>
+              : 'from-blue-600 via-purple-600 to-pink-600'
+              }`}>
+              Featured Projects
+            </span>
+          </motion.h2>
+
+          {/* Animated Underline */}
+          <motion.div
+            className={`h-1.5 w-24 mx-auto rounded-full mb-8 bg-gradient-to-r shadow-lg ${darkMode
+              ? 'from-blue-400 via-purple-400 to-pink-400 shadow-blue-500/50'
+              : 'from-blue-600 via-purple-600 to-pink-600 shadow-purple-500/50'
+              }`}
+            initial={{ width: 0 }}
+            whileInView={{ width: 96 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          />
+
+          {/* Enhanced Description */}
+          <motion.p
+            className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'
+              }`}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            Explore my portfolio of <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>creative solutions</span> and innovative applications
+          </motion.p>
+        </motion.div>
 
         <div className="max-w-6xl mx-auto">
           {/* Search and Filter */}
@@ -248,8 +328,7 @@ const Projects = ({ darkMode }) => {
             <Card3D darkMode={darkMode} className="flex-1">
               <div className="relative group">
                 <input
-                  type="text"
-                  placeholder="Search projects..."
+                  type="text"                  aria-label="Search projects"                  placeholder="Search projects..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full px-6 py-4 pr-12 rounded-2xl outline-none transition-all duration-300
@@ -276,6 +355,7 @@ const Projects = ({ darkMode }) => {
               <div className="flex items-center gap-4 p-2 overflow-x-auto">
                 {categories.map((category) => (
                   <motion.button
+                    type="button"
                     key={category.id}
                     onClick={() => setFilter(category.id)}
                     className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap
@@ -461,6 +541,7 @@ const Projects = ({ darkMode }) => {
             >
               <p className="text-xl mb-4">No projects found</p>
               <button
+                type="button"
                 onClick={() => {
                   setFilter('all');
                   setSearchQuery('');

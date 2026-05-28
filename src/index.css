@@ -32,20 +32,46 @@ body {
   position: relative;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
+/* Subtle custom scrollbars for a better UX */
 ::-webkit-scrollbar {
-  display: none;
+  width: 10px;
+  height: 10px;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-* {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
+::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
 
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.55);
+}
+
+/* Default focus styles for keyboard accessibility */
+:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.7);
+  outline-offset: 3px;
+}
+
+button,
+input,
+textarea,
+select {
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
 
 /* Section padding adjustments */
+* {
+  -ms-overflow-style: auto;  /* IE and Edge */
+  scrollbar-width: thin;  /* Firefox */
+}
+
 section {
   scroll-margin-top: 80px;
 }
@@ -77,5 +103,112 @@ section {
 /* Smooth transitions for dark mode */
 .transition-colors {
   transition: background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+
+:root {
+  color-scheme: dark;
+  --surface-light: rgba(255, 255, 255, 0.78);
+  --surface-dark: rgba(15, 23, 42, 0.76);
+  --shadow-soft: 0 20px 45px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 20px 60px rgba(59, 130, 246, 0.12);
+}
+
+body {
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 25%),
+    radial-gradient(circle at 20% 10%, rgba(168, 85, 247, 0.08), transparent 18%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 55%, #e2e8f0 100%);
+  color: #0f172a;
+}
+
+html.dark {
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 20%),
+    radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.1), transparent 15%),
+    linear-gradient(180deg, #020617 0%, #0f172a 45%, #111827 100%);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition: all 0.25s ease;
+}
+
+button,
+a.button,
+input,
+textarea,
+select {
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover,
+button:hover {
+  transform: translateY(-1px);
+}
+
+.glass-panel {
+  background: var(--surface-light);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-soft);
+}
+
+.glass-panel-dark {
+  background: var(--surface-dark);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-soft);
+}
+
+.section-card {
+  border-radius: 32px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.primary-action {
+  border-radius: 24px;
+  box-shadow: var(--shadow-glow);
+  transition: transform 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+}
+
+.primary-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 65px rgba(59, 130, 246, 0.18);
+}
+
+.secondary-action {
+  border-radius: 24px;
+  transition: transform 0.24s ease, background 0.24s ease, color 0.24s ease;
+}
+
+.secondary-action:hover {
+  transform: translateY(-2px);
+}
+
+.section-heading {
+  letter-spacing: -0.04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 

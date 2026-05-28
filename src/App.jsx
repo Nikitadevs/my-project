@@ -69,12 +69,14 @@ const App = () => {
   return (
     <Router>
       <ErrorBoundary darkMode={darkMode}>
-        <div className={`min-h-screen transition-colors duration-500 ${
-          darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+        <div className={`min-h-screen transition-colors duration-500 ease-out overflow-x-hidden ${
+          darkMode
+            ? 'bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white'
+            : 'bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900'
         }`}>
           <Header toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
           
-          <main className="pt-20"> {/* Added padding-top to account for fixed header */}
+          <main className="pt-28"> {/* Added padding-top to account for fixed header */}
             <Routes>
               <Route path="/" element={<Hero darkMode={darkMode} />} />
               <Route path="/about" element={<About darkMode={darkMode} />} />

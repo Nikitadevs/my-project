@@ -19,79 +19,18 @@ import { faArrowDown, faCode, faRocket, faMagicWandSparkles } from '@fortawesome
 import { Link } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
 import Card3D from './Card3D';
+import Grid3DBackground from './Grid3DBackground';
+import FloatingElements from './FloatingElements';
+import ErrorBoundary from './ErrorBoundary';
+import useReducedMotion from '../hooks/useReducedMotion';
+import { containerVariants, itemVariants, buttonVariants } from '../utils/animationVariants';
 
 // Lazy load components
 const Typewriter = lazy(() => import('typewriter-effect'));
 const Particles = lazy(() => import('@tsparticles/react'));
 
-/**
- * ErrorBoundary Component
- * Catches errors in its child components and displays a fallback UI.
- */
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(/*error*/) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, info) {
-    console.error('Error loading component:', error, info);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback || null;
-    }
-    return this.props.children;
-  }
-}
-
-ErrorBoundary.propTypes = {
-  children: PropTypes.node.isRequired,
-  fallback: PropTypes.node,
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-      staggerChildren: 0.2,
-      delayChildren: 0.3,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-};
-
-const buttonVariants = {
-  hover: {
-    scale: 1.05,
-    transition: {
-      duration: 0.2,
-      ease: "easeOut",
-    },
-  },
-  tap: {
-    scale: 0.95,
-  },
-};
+// Hero-specific animation variants
+const heroContainerVariants = containerVariants(0.2);
 
 const floatingIconVariants = {
   animate: {
@@ -284,13 +223,14 @@ const Hero = ({
 }) => {
   const containerRef = useRef(null);
   const { scrollY } = useScroll();
-  
-  // Enhanced scroll-driven animations
-  const y = useTransform(scrollY, [0, 500], [0, 200]);
-  const opacity = useTransform(scrollY, [0, 200], [1, 0]);
-  const scale = useTransform(scrollY, [0, 200], [1, 0.95]);
-  const rotate = useTransform(scrollY, [0, 500], [0, -5]);
-  const parallaxY = useTransform(scrollY, [0, 1000], [0, 300]);
+  const prefersReducedMotion = useReducedMotion();
+
+  // Enhanced scroll-driven animations (respecting reduced motion)
+  const y = useTransform(scrollY, [0, 500], prefersReducedMotion ? [0, 0] : [0, 200]);
+  const opacity = useTransform(scrollY, [0, 200], [1, prefersReducedMotion ? 1 : 0]);
+  const scale = useTransform(scrollY, [0, 200], prefersReducedMotion ? [1, 1] : [1, 0.95]);
+  const rotate = useTransform(scrollY, [0, 500], prefersReducedMotion ? [0, 0] : [0, -5]);
+  const parallaxY = useTransform(scrollY, [0, 1000], prefersReducedMotion ? [0, 0] : [0, 300]);
 
   const controls = useAnimation();
   const { ref, inView } = useInView({
@@ -302,15 +242,16 @@ const Hero = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Optimized particle count calculation
+  // Optimized particle count calculation (reduced for better performance)
   const getParticleCount = useMemo(() => {
     if (typeof window !== 'undefined') {
-      if (window.innerWidth < 640) return 10;
-      if (window.innerWidth < 768) return 15;
-      if (window.innerWidth < 1024) return 25;
-      return 35;
+      // Reduce particle count for better performance
+      if (window.innerWidth < 640) return 8;
+      if (window.innerWidth < 768) return 12;
+      if (window.innerWidth < 1024) return 20;
+      return 30;
     }
-    return 35;
+    return 30;
   }, []);
 
   const [particleCount, setParticleCount] = useState(getParticleCount);
@@ -319,7 +260,7 @@ const Hero = ({
   useEffect(() => {
     let rafId;
     let timeoutId;
-    
+
     const handleResize = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
@@ -346,121 +287,27 @@ const Hero = ({
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    
+
     setMousePosition({ x, y });
   }, []);
 
-  // Enhanced 3D grid background with interactive cells
-  const Grid3DBackground = () => {
-    // Calculate grid size based on screen width
-    const gridSize = useMemo(() => {
-      if (typeof window !== 'undefined') {
-        if (window.innerWidth < 640) return { cols: 4, total: 16 };
-        if (window.innerWidth < 768) return { cols: 6, total: 24 };
-        if (window.innerWidth < 1024) return { cols: 8, total: 32 };
-        return { cols: 10, total: 40 };
-      }
-      return { cols: 8, total: 32 };
-    }, []);
 
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        <div 
-          className="absolute inset-0"
-          style={{
-            perspective: '2000px',
-            transform: `rotateX(${mousePosition.y * 8}deg) rotateY(${mousePosition.x * 8}deg)`,
-            transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        >
-          <div 
-            className={`absolute inset-0 grid gap-4 p-4`}
-            style={{
-              gridTemplateColumns: `repeat(${gridSize.cols}, minmax(0, 1fr))`,
-              transform: 'translateZ(-150px)',
-              transformStyle: 'preserve-3d'
-            }}
-          >
-            {Array.from({ length: gridSize.total }).map((_, i) => (
-              <motion.div
-                key={i}
-                className={`rounded-lg backdrop-blur-sm ${
-                  darkMode 
-                    ? `bg-gradient-to-br from-blue-500/5 to-purple-500/5`
-                    : `bg-gradient-to-br from-blue-300/10 to-purple-300/10`
-                }`}
-                initial={{ opacity: 0, z: -150 }}
-                animate={{ 
-                  opacity: 1,
-                  z: Math.sin((i % gridSize.cols) * 0.5 + (mousePosition.x * 1.2)) * 40,
-                  rotateX: Math.cos((i % gridSize.cols) * 0.5 + (mousePosition.y * 1.2)) * 15,
-                  rotateY: Math.sin((i % gridSize.cols) * 0.5 + (mousePosition.x * 1.2)) * 15,
-                }}
-                transition={{
-                  duration: 5,
-                  delay: i * 0.04,
-                  repeat: Infinity,
-                  repeatType: 'reverse',
-                  ease: 'easeInOut',
-                }}
-                style={{
-                  boxShadow: darkMode 
-                    ? '0 0 15px rgba(59, 130, 246, 0.1)'
-                    : '0 0 15px rgba(59, 130, 246, 0.15)',
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Floating elements animation
-  const FloatingElements = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className={`absolute w-${Math.floor(Math.random() * 4 + 2)} h-${Math.floor(Math.random() * 4 + 2)} rounded-full
-            ${darkMode ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10' 
-            : 'bg-gradient-to-r from-blue-300/10 to-purple-300/10'}`}
-          initial={{
-            x: `${Math.random() * 100}%`,
-            y: `${Math.random() * 100}%`,
-            scale: 0,
-          }}
-          animate={{
-            x: `${Math.random() * 100}%`,
-            y: `${Math.random() * 100}%`,
-            scale: [0, 0.8, 0],
-            rotate: [0, 180],
-          }}
-          transition={{
-            duration: Math.random() * 10 + 10,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
-      ))}
-    </div>
-  );
 
   // Memoize Grid3DBackground
   const MemoizedGrid3DBackground = useMemo(() => {
-    return !isMobile && <Grid3DBackground />;
-  }, [isMobile, mousePosition.x, mousePosition.y]);
+    return !isMobile && <Grid3DBackground darkMode={darkMode} mousePosition={mousePosition} />;
+  }, [isMobile, darkMode, mousePosition]);
 
   // Memoize FloatingElements
   const MemoizedFloatingElements = useMemo(() => {
-    return <FloatingElements />;
+    return <FloatingElements darkMode={darkMode} />;
   }, [darkMode]);
 
   // Memoize ParticleBackground
   const MemoizedParticleBackground = useMemo(() => {
     return (
-      <ParticleBackground 
-        darkMode={darkMode} 
+      <ParticleBackground
+        darkMode={darkMode}
         particleCount={particleCount}
         isMobile={isMobile}
       />
@@ -470,42 +317,46 @@ const Hero = ({
   return (
     <motion.section
       ref={containerRef}
+      role="banner"
+      aria-label="Hero section"
       className={`relative min-h-screen flex items-center justify-center overflow-hidden
         ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
       initial="hidden"
       animate="visible"
-      variants={containerVariants}
-      onMouseMove={handleMouseMove}
+      variants={heroContainerVariants}
+      onMouseMove={!prefersReducedMotion ? handleMouseMove : undefined}
     >
-      {/* Enhanced background effects */}
-      {MemoizedGrid3DBackground}
-      {MemoizedFloatingElements}
-      {MemoizedParticleBackground}
-      
-      <motion.div 
+      {/* Enhanced background effects (disabled for reduced motion) */}
+      {!prefersReducedMotion && MemoizedGrid3DBackground}
+      {!prefersReducedMotion && MemoizedFloatingElements}
+      {!prefersReducedMotion && MemoizedParticleBackground}
+
+      <motion.div
         className="container mx-auto px-4 z-10"
-        style={{ y, opacity, scale, rotateX: rotate }}
+        style={prefersReducedMotion ? {} : { y, opacity, scale, rotateX: rotate }}
       >
         <motion.div
           ref={ref}
           className="max-w-6xl mx-auto text-center"
-          variants={containerVariants}
+          variants={heroContainerVariants}
         >
           {/* Role badge with enhanced animation */}
-          <motion.div 
-            variants={itemVariants} 
+          <motion.div
+            variants={itemVariants(0.6)}
             className="mb-8"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
           >
             <Card3D darkMode={darkMode} className="inline-block">
-              <motion.span 
+              <motion.span
                 className={`px-6 py-2 rounded-full text-sm font-medium inline-block
                   ${darkMode ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-600'}
                   transition-all duration-300`}
-                whileHover={{
+                whileHover={prefersReducedMotion ? {} : {
                   backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
                 }}
+                role="text"
+                aria-label="Job title: Full Stack Developer"
               >
                 Full Stack Developer
               </motion.span>
@@ -515,54 +366,106 @@ const Hero = ({
           {/* Enhanced heading with dynamic typing */}
           <motion.h1
             variants={itemVariants}
-            className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight"
+            className="text-5xl sm:text-6xl md:text-8xl font-extrabold mb-8 leading-tight"
           >
-            <motion.span 
-              className="block"
-              animate={{
-                y: [0, -10, 0],
-                opacity: [0.8, 1, 0.8],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
+            <motion.div
+              className="block mb-2"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
             >
-              Hi, I'm
-            </motion.span>
-            <span className={`bg-gradient-to-r bg-clip-text text-transparent inline-block
-              ${darkMode 
-                ? 'from-blue-400 via-purple-400 to-pink-400'
-                : 'from-blue-600 via-purple-600 to-pink-600'
-              }`}>
-              <TypeAnimation
-                sequence={[
-                  ' Nikita', 3000,
-                  ' a Developer', 2000,
-                  ' a Designer', 2000,
-                  ' an Innovator', 2000,
-                  ' a Problem Solver', 2000,
-                ]}
-                wrapper="div"
-                speed={50}
-                deletionSpeed={65}
-                repeat={Infinity}
-                cursor={true}
-                className="inline-block min-h-[1.2em] whitespace-pre"
+              <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>
+                Hi, I'm
+              </span>
+            </motion.div>
+            <motion.div
+              className="relative inline-block"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              <span className={`bg-gradient-to-r bg-clip-text text-transparent inline-block
+                ${darkMode
+                  ? 'from-blue-400 via-purple-400 to-pink-400'
+                  : 'from-blue-600 via-purple-600 to-pink-600'
+                }`}>
+                <TypeAnimation
+                  sequence={[
+                    'Nikita', 3000,
+                    'a Developer', 2000,
+                    'a Designer', 2000,
+                    'an Innovator', 2000,
+                    'a Problem Solver', 2000,
+                  ]}
+                  wrapper="div"
+                  speed={50}
+                  deletionSpeed={65}
+                  repeat={Infinity}
+                  cursor={true}
+                  className="inline-block min-h-[1.2em] whitespace-pre"
+                />
+              </span>
+
+              {/* Animated underline */}
+              <motion.div
+                className={`h-1.5 md:h-2 rounded-full mt-2 bg-gradient-to-r ${darkMode
+                  ? 'from-blue-400 via-purple-400 to-pink-400'
+                  : 'from-blue-600 via-purple-600 to-pink-600'
+                  }`}
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 1, delay: 1 }}
               />
-            </span>
+            </motion.div>
           </motion.h1>
 
-          {/* Enhanced description */}
-          <motion.p
+          {/* Enhanced description with badges */}
+          <motion.div
             variants={itemVariants}
-            className={`text-xl md:text-2xl mb-12 max-w-3xl mx-auto
-              ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+            className="mb-12 space-y-6"
           >
-            Crafting digital experiences with modern technologies and creative solutions.
-            Turning ideas into reality through clean code and elegant design.
-          </motion.p>
+            <motion.p
+              className={`text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed font-medium
+                ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+            >
+              Crafting <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>digital experiences</span> with modern technologies and creative solutions.
+            </motion.p>
+
+            <motion.div
+              className="flex flex-wrap justify-center gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1 }}
+            >
+              {['React', 'Node.js', 'TypeScript', 'UI/UX'].map((skill, index) => (
+                <motion.span
+                  key={skill}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-md border ${darkMode
+                    ? 'bg-gray-800/60 text-gray-200 border-gray-700/50'
+                    : 'bg-white/60 text-gray-700 border-gray-300/50'
+                    } shadow-lg`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 1.1 + index * 0.1 }}
+                  whileHover={{
+                    scale: 1.1,
+                    y: -5,
+                    backgroundColor: darkMode ? '#3B82F6' : '#2563EB',
+                    color: '#ffffff',
+                    borderColor: darkMode ? '#60A5FA' : '#3B82F6',
+                    boxShadow: darkMode
+                      ? '0 10px 25px rgba(59, 130, 246, 0.4)'
+                      : '0 10px 25px rgba(37, 99, 235, 0.3)',
+                  }}
+                >
+                  {skill}
+                </motion.span>
+              ))}
+            </motion.div>
+          </motion.div>
 
           {/* Enhanced CTA buttons with liquid effects */}
           <motion.div
@@ -589,7 +492,7 @@ const Hero = ({
                   whileHover={{ opacity: 0.3 }}
                   transition={{ duration: 0.3 }}
                 />
-                
+
                 {/* Liquid shimmer effect */}
                 <motion.div
                   className="absolute inset-0"
@@ -632,7 +535,7 @@ const Hero = ({
                     className="h-5 w-5"
                     viewBox="0 0 20 20"
                     fill="currentColor"
-                    animate={{ 
+                    animate={{
                       x: isHovered ? 4 : 0,
                     }}
                     transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
@@ -657,9 +560,8 @@ const Hero = ({
               >
                 {/* Ripple effect on hover */}
                 <motion.div
-                  className={`absolute inset-0 rounded-2xl ${
-                    darkMode ? 'bg-white/10' : 'bg-gray-900/5'
-                  }`}
+                  className={`absolute inset-0 rounded-2xl ${darkMode ? 'bg-white/10' : 'bg-gray-900/5'
+                    }`}
                   initial={{ scale: 0, opacity: 1 }}
                   whileHover={{ scale: 2, opacity: 0 }}
                   transition={{ duration: 0.6 }}
