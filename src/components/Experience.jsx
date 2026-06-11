@@ -1,296 +1,601 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import Card3D from './Card3D';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faBriefcase,
+  faArrowRight,
+  faCheck,
+  faCalendar,
+  faTrophy,
+  faLayerGroup,
+  faChevronDown,
+} from '@fortawesome/free-solid-svg-icons';
+import SectionBackground from './SectionBackground';
+import SectionHeading from './SectionHeading';
+import GlassPanel from './GlassPanel';
+import { getSectionTheme, getBluePanelWash } from './themeTokens';
+import useReducedMotion from '../hooks/useReducedMotion';
+import { experiences } from './siteData';
+
+const MotionLink = motion.create(Link);
+const STAT_ICONS = [faBriefcase, faTrophy, faLayerGroup];
+
+const ACCENT_GRADIENTS = [
+  'from-blue-500 to-cyan-500',
+  'from-purple-500 to-pink-500',
+  'from-emerald-500 to-teal-500',
+];
 
 const containerVariants = {
-	hidden: { opacity: 0 },
-	visible: {
-		opacity: 1,
-		transition: {
-			staggerChildren: 0.2
-		}
-	}
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
 };
 
 const itemVariants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: {
-			duration: 0.5,
-			ease: "easeOut"
-		}
-	}
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
+};
+
+const getEntryId = (exp) => `${exp.company}-${exp.period}`;
+
+const ExperienceEntry = ({
+  exp,
+  index,
+  darkMode,
+  heading,
+  body,
+  muted,
+  accent,
+  accentColor,
+  cellBg,
+  cellHover,
+  divider,
+  prefersReducedMotion,
+  isRight,
+  isExpanded,
+  onToggle,
+}) => (
+  <div className={`pl-10 md:pl-0 ${isRight ? 'md:col-start-2' : 'md:col-start-1'}`}>
+    <div
+      id={`experience-${index}`}
+      className={`group relative scroll-mt-28 overflow-hidden rounded-[var(--radius-glass-lg)] transition-all duration-300 ${cellBg} ${cellHover} ${
+        isExpanded
+          ? darkMode
+            ? 'bg-white/[0.05] ring-1 ring-inset ring-white/10'
+            : 'liquid-glass-cell ring-1 ring-inset ring-slate-200/90'
+          : ''
+      } ${
+        exp.current
+          ? darkMode
+            ? 'ring-1 ring-inset ring-emerald-400/20'
+            : 'ring-1 ring-inset ring-emerald-500/15'
+          : ''
+      }`}
+    >
+      <div
+        className={`pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full bg-gradient-to-b opacity-80 ${accentColor}`}
+        aria-hidden="true"
+      />
+      <div
+        className={`pointer-events-none absolute inset-x-5 bottom-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r transition-transform duration-300 group-hover:scale-x-100 group-focus-within:scale-x-100 ${accentColor}`}
+        aria-hidden="true"
+      />
+      <div
+        className={`pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gradient-to-r opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-20 ${accentColor}`}
+        aria-hidden="true"
+      />
+
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={`experience-panel-${index}`}
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${exp.role} at ${exp.company}`}
+        className="relative z-10 w-full p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 md:p-7"
+      >
+        <div className="flex items-start gap-4 pl-2">
+          <div className={`rounded-[14px] p-[1.5px] bg-gradient-to-br ${accentColor} shadow-md`}>
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-[12px] bg-gradient-to-br text-lg font-bold text-white md:h-14 md:w-14 md:text-xl ${accentColor}`}
+            >
+              {exp.company.charAt(0)}
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <h3 className={`text-lg font-bold leading-tight md:text-2xl ${heading}`}>{exp.role}</h3>
+              {exp.current && (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-semibold ${
+                    darkMode ? 'liquid-glass-chip-dark text-emerald-300' : 'liquid-glass-chip text-emerald-700'
+                  }`}
+                >
+                  {!prefersReducedMotion && (
+                    <motion.span
+                      className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                      animate={{ scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  Current
+                </span>
+              )}
+            </div>
+            <p className={`text-base font-semibold md:text-lg ${accent}`}>{exp.company}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <span className={`hidden text-[10px] font-bold tabular-nums tracking-widest md:inline ${muted}`}>
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'
+              }`}
+            >
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                className={`text-xs transition-transform duration-300 ${accent} ${isExpanded ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 pl-2">
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 text-sm ${
+              darkMode ? 'liquid-glass-chip-dark text-slate-300' : 'liquid-glass-chip text-slate-600'
+            }`}
+          >
+            <FontAwesomeIcon icon={faCalendar} className="text-xs" aria-hidden="true" />
+            {exp.period}
+          </span>
+          {!isExpanded && (
+            <>
+              <span
+                className={`inline-flex px-2.5 py-0.5 text-xs font-medium ${
+                  darkMode ? 'liquid-glass-chip-dark text-slate-300' : 'liquid-glass-chip text-slate-600'
+                }`}
+              >
+                {exp.achievements.length} achievements
+              </span>
+              <span
+                className={`inline-flex px-2.5 py-0.5 text-xs font-medium ${
+                  darkMode ? 'liquid-glass-chip-dark text-slate-300' : 'liquid-glass-chip text-slate-600'
+                }`}
+              >
+                {exp.technologies.length} technologies
+              </span>
+            </>
+          )}
+        </div>
+
+        {!isExpanded && (
+          <>
+            <p className={`mt-4 line-clamp-2 pl-2 text-sm leading-relaxed md:text-base ${body}`}>
+              {exp.description}
+            </p>
+            <span className={`mt-3 inline-flex items-center gap-1.5 pl-2 text-xs font-semibold ${accent}`}>
+              View details
+              <FontAwesomeIcon icon={faChevronDown} className="text-[10px]" aria-hidden="true" />
+            </span>
+          </>
+        )}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            id={`experience-panel-${index}`}
+            initial={prefersReducedMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={prefersReducedMotion ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className={`border-t px-5 pb-5 pt-4 md:px-7 md:pb-7 md:pt-5 ${divider}`}>
+              <p className={`mb-6 pl-2 text-sm leading-relaxed md:text-base ${body}`}>
+                {exp.description}
+              </p>
+
+              <div className="mb-6 pl-2">
+                <p className={`mb-3 text-[10px] font-bold uppercase tracking-[0.18em] ${muted}`}>
+                  Key achievements
+                </p>
+                <ul className="space-y-2.5">
+                  {exp.achievements.map((achievement) => (
+                    <li key={achievement} className="flex items-start gap-2.5">
+                      <span
+                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                          darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'
+                        }`}
+                      >
+                        <FontAwesomeIcon
+                          icon={faCheck}
+                          className={`text-[10px] ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <span className={`text-sm leading-relaxed md:text-base ${body}`}>{achievement}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pl-2">
+                <p className={`mb-3 text-[10px] font-bold uppercase tracking-[0.18em] ${muted}`}>
+                  Tech stack
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {exp.technologies.map((tech) => (
+                    <Link
+                      key={tech}
+                      to="/skills"
+                      className={`px-2.5 py-1 text-xs font-medium transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:text-sm ${
+                        darkMode ? 'liquid-glass-tag-dark text-slate-200' : 'liquid-glass-tag text-slate-700'
+                      }`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {tech}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </div>
+);
+
+ExperienceEntry.propTypes = {
+  exp: PropTypes.shape({
+    company: PropTypes.string.isRequired,
+    role: PropTypes.string.isRequired,
+    period: PropTypes.string.isRequired,
+    current: PropTypes.bool,
+    description: PropTypes.string.isRequired,
+    achievements: PropTypes.arrayOf(PropTypes.string).isRequired,
+    technologies: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  index: PropTypes.number.isRequired,
+  darkMode: PropTypes.bool.isRequired,
+  heading: PropTypes.string.isRequired,
+  body: PropTypes.string.isRequired,
+  muted: PropTypes.string.isRequired,
+  accent: PropTypes.string.isRequired,
+  accentColor: PropTypes.string.isRequired,
+  cellBg: PropTypes.string.isRequired,
+  cellHover: PropTypes.string.isRequired,
+  divider: PropTypes.string.isRequired,
+  prefersReducedMotion: PropTypes.bool.isRequired,
+  isRight: PropTypes.bool.isRequired,
+  isExpanded: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
 };
 
 const Experience = ({ darkMode }) => {
-	const experiences = [
-		{
-			company: "TechCorp Inc.",
-			role: "Senior Software Engineer",
-			period: "2020 - Present",
-			description: "Led development of multiple high-impact projects, architecting scalable solutions that serve millions of users globally. Spearheaded the migration to microservices architecture.",
-			achievements: [
-				"Improved application performance by 40% through code optimization",
-				"Implemented new features used by 1M+ active users",
-				"Led a team of 5 developers and mentored junior engineers",
-				"Reduced deployment time by 60% with CI/CD automation"
-			],
-			technologies: ["React", "Node.js", "TypeScript", "AWS", "Docker"]
-		},
-		{
-			company: "StartupHub Solutions",
-			role: "Full Stack Developer",
-			period: "2018 - 2020",
-			description: "Developed and maintained full-stack web applications, collaborating with cross-functional teams to deliver high-quality software solutions.",
-			achievements: [
-				"Built responsive web applications from scratch",
-				"Integrated third-party APIs and payment systems",
-				"Optimized database queries improving load times by 50%"
-			],
-			technologies: ["JavaScript", "Python", "MongoDB", "Express"]
-		},
-		{
-			company: "Digital Agency Pro",
-			role: "Frontend Developer",
-			period: "2016 - 2018",
-			description: "Created beautiful and functional user interfaces for client projects, ensuring pixel-perfect implementation and cross-browser compatibility.",
-			achievements: [
-				"Delivered 20+ client projects on time and within budget",
-				"Improved website load times by 35% through optimization",
-				"Implemented accessibility standards (WCAG 2.1)"
-			],
-			technologies: ["HTML5", "CSS3", "JavaScript", "jQuery", "Bootstrap"]
-		}
-	];
+  const prefersReducedMotion = useReducedMotion();
+  const [expandedIds, setExpandedIds] = useState(() => {
+    const current = experiences.find((exp) => exp.current) ?? experiences[0];
+    return new Set([getEntryId(current)]);
+  });
 
-	return (
-		<section
-			id="experience"
-			className={`relative py-16 md:py-24 overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-gray-50 to-white text-gray-900'
-				}`}
-		>
-			{/* Animated background elements */}
-			<div className="absolute inset-0 overflow-hidden pointer-events-none">
-				<motion.div
-					className={`absolute top-20 -right-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-200/30'
-						}`}
-					animate={{
-						scale: [1, 1.2, 1],
-						x: [0, 50, 0],
-						y: [0, -30, 0],
-					}}
-					transition={{
-						duration: 20,
-						repeat: Infinity,
-						ease: "easeInOut"
-					}}
-				/>
-				<motion.div
-					className={`absolute bottom-40 -left-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/10' : 'bg-purple-200/30'
-						}`}
-					animate={{
-						scale: [1, 1.3, 1],
-						x: [0, -50, 0],
-						y: [0, 30, 0],
-					}}
-					transition={{
-						duration: 25,
-						repeat: Infinity,
-						ease: "easeInOut"
-					}}
-				/>
-			</div>
-			<div className="container mx-auto px-4 md:px-6 relative z-10">
-<div className="text-center mb-12 md:mb-20">
-				<motion.div
-					className="inline-block mb-4"
-					initial={{ opacity: 0, y: -20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true }}
-					transition={{ duration: 0.6 }}
-				>
-					<span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
-						Work Experience
-					</span>
-				</motion.div>
-				<motion.h2
-					className={`text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent ${darkMode ? 'from-blue-400 via-purple-400 to-pink-400' : 'from-blue-600 via-purple-600 to-pink-600'}`}
-					initial={{ opacity: 0, y: 20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true }}
-					transition={{ duration: 0.6, delay: 0.1 }}
-				>
-					Work Experience
-				</motion.h2>
-				<motion.div
-					className={`h-1.5 w-24 mx-auto rounded-full mb-6 bg-gradient-to-r shadow-lg ${darkMode ? 'from-blue-400 via-purple-400 to-pink-400 shadow-blue-500/50' : 'from-blue-600 via-purple-600 to-pink-600 shadow-purple-500/50'}`}
-					initial={{ width: 0 }}
-					whileInView={{ width: 96 }}
-					viewport={{ once: true }}
-					transition={{ duration: 0.8, delay: 0.2 }}
-				/>
-				<motion.p
-					className={`text-center text-lg md:text-xl mb-12 max-w-2xl mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}
-					initial={{ opacity: 0 }}
-					whileInView={{ opacity: 1 }}
-					viewport={{ once: true }}
-					transition={{ duration: 0.6, delay: 0.3 }}
-				>
-					Professional roles and career achievements
-				</motion.p>
-				</div>
+  const toggleEntry = useCallback((entryId) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(entryId)) next.delete(entryId);
+      else next.add(entryId);
+      return next;
+    });
+  }, []);
 
-				<motion.div
-					className="relative max-w-6xl mx-auto"
-					variants={containerVariants}
-					initial="hidden"
-					whileInView="visible"
-					viewport={{ once: true, amount: 0.3 }}
-				>
-					{/* Timeline line */}
-					<div
-						className={`absolute left-[12px] md:left-1/2 h-full w-1 md:w-0.5 transform md:-translate-x-1/2
-							${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
-					>
-						<motion.div
-							className={`absolute top-0 w-full ${darkMode ? 'bg-blue-500' : 'bg-blue-600'} rounded-full`}
-							style={{ height: '0%' }}
-							animate={{ height: '100%' }}
-							transition={{ duration: 1.5, ease: "easeInOut" }}
-						/>
-					</div>
+  const expandAll = useCallback(() => {
+    setExpandedIds(new Set(experiences.map(getEntryId)));
+  }, []);
 
-					{/* Experience cards */}
-					<div className="space-y-8 md:space-y-12">
-						{experiences.map((exp, index) => (
-							<motion.div
-								key={index}
-								variants={itemVariants}
-								className={`relative grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 ${index % 2 === 0 ? 'md:text-right pl-8 md:pl-0' : 'md:text-left md:flex-row-reverse pl-8 md:pl-0'
-									}`}
-							>
-								{/* Timeline dot with liquid effect */}
-								<motion.div
-									className={`absolute left-[10px] md:left-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full transform md:-translate-x-1/2 z-10 relative
-										${darkMode ? 'bg-blue-500' : 'bg-blue-600'}`}
-									whileHover={{ scale: 2 }}
-									transition={{ duration: 0.3 }}
-								>
-									{/* Pulsing ring */}
-									<motion.div
-										className={`absolute inset-0 rounded-full ${darkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
-										animate={{
-											scale: [1, 2, 1],
-											opacity: [0.6, 0, 0.6],
-										}}
-										transition={{
-											duration: 2,
-											repeat: Infinity,
-											ease: "easeInOut"
-										}}
-									/>
-								</motion.div>
+  const collapseAll = useCallback(() => {
+    setExpandedIds(new Set());
+  }, []);
 
-								<Card3D
-									darkMode={darkMode}
-									className={`md:w-[90%] ${index % 2 === 0 ? 'md:ml-auto' : ''} backdrop-blur-xl shadow-xl hover:shadow-2xl transition-shadow duration-300`}
-								>
-									<motion.div
-										className={`p-4 md:p-6 relative rounded-2xl backdrop-blur-xl overflow-hidden ${darkMode
-											? 'bg-gradient-to-br from-gray-800/90 to-gray-900/90 border border-white/10'
-											: 'bg-white/90 border border-gray-200/50 shadow-xl'
-											}`}
-										whileHover={{ scale: 1.02, borderColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.5)' }}
-										transition={{ duration: 0.3 }}
-									>
-										{/* Floating gradient orb */}
-										<motion.div
-											className={`absolute w-32 h-32 rounded-full blur-3xl opacity-10 bg-gradient-to-r from-blue-400 to-purple-400`}
-											animate={{
-												x: [0, 20, 0],
-												y: [0, -20, 0],
-												scale: [1, 1.2, 1],
-											}}
-											transition={{
-												duration: 4,
-												repeat: Infinity,
-												ease: "easeInOut"
-											}}
-											style={{ top: '-10%', right: '-10%' }}
-										/>
+  const jumpToEntry = useCallback((index, entryId) => {
+    setExpandedIds((prev) => new Set(prev).add(entryId));
+    document.getElementById(`experience-${index}`)?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, [prefersReducedMotion]);
 
-										<h3 className="text-xl md:text-2xl font-bold mb-3 relative z-10 leading-tight">{exp.role}</h3>
-										<p className={`text-lg md:text-xl mb-2 relative z-10 font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-											{exp.company}
-										</p>
-										<motion.p
-											className={`text-sm mb-4 relative z-10 inline-block px-3 py-1 rounded-full backdrop-blur-sm ${darkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-200/50 text-gray-600'}`}
-											whileHover={{ scale: 1.05 }}
-										>
-											{exp.period}
-										</motion.p>
-										<p className={`mb-4 md:mb-6 relative z-10 text-sm md:text-base leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{exp.description}</p>
+  const summaryStats = useMemo(() => {
+    const technologies = new Set(experiences.flatMap((exp) => exp.technologies));
+    const achievements = experiences.reduce((sum, exp) => sum + exp.achievements.length, 0);
+    return [
+      { label: 'Roles', value: experiences.length, icon: STAT_ICONS[0] },
+      { label: 'Achievements', value: achievements, icon: STAT_ICONS[1] },
+      { label: 'Technologies', value: technologies.size, icon: STAT_ICONS[2] },
+    ];
+  }, []);
 
-										<div className="space-y-2">
-											{exp.achievements.map((achievement, i) => (
-												<motion.div
-													key={i}
-													initial={{ opacity: 0, x: -20 }}
-													whileInView={{ opacity: 1, x: 0 }}
-													transition={{ delay: i * 0.1 }}
-													className="flex items-center gap-2"
-												>
-													<motion.svg
-														xmlns="http://www.w3.org/2000/svg"
-														className={`h-5 w-5 flex-shrink-0 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
-														viewBox="0 0 20 20"
-														fill="currentColor"
-														whileHover={{ scale: 1.2, rotate: 360 }}
-														transition={{ duration: 0.3 }}
-													>
-														<path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-													</motion.svg>
-													<span>{achievement}</span>
-												</motion.div>
-											))}
-										</div>
+  const {
+    muted, body, heading, accent, gradient, panel, inset, nested, divider, topEdge, cellBg, cellHover, sectionBg, gridGap, footerWash,
+  } = getSectionTheme(darkMode);
+  const panelWash = getBluePanelWash(darkMode);
 
-										<div className="mt-4 flex flex-wrap gap-1.5 md:gap-2">
-											{exp.technologies.map((tech, i) => (
-												<motion.span
-													key={i}
-													className={`px-2 md:px-3 py-1 rounded-full text-xs md:text-sm
-														${darkMode
-															? 'bg-gray-800 text-gray-300'
-															: 'bg-gray-100 text-gray-700'
-														}`}
-													whileHover={{
-														scale: 1.1,
-														backgroundColor: darkMode ? '#3B82F6' : '#2563EB',
-														color: '#ffffff'
-													}}
-													transition={{ duration: 0.2 }}
-												>
-													{tech}
-												</motion.span>
-											))}
-										</div>
-									</motion.div>
-								</Card3D>
-							</motion.div>
-						))}
-					</div>
-				</motion.div>
-			</div>
-		</section>
-	);
+  return (
+    <section
+      id="experience"
+      className={`section-shell relative w-full overflow-hidden py-20 md:py-28 ${sectionBg}`}
+    >
+      <SectionBackground darkMode={darkMode} />
+      <div className="page-wrap relative z-10 mx-auto w-full max-w-6xl px-4 md:px-6">
+          <SectionHeading
+            badge="Career Journey"
+            title="Work Experience"
+            subtitle="A timeline of roles, impact, and the technologies behind each chapter"
+            darkMode={darkMode}
+            align="left"
+            badgeIcon={<FontAwesomeIcon icon={faBriefcase} className="h-4 w-4" aria-hidden="true" />}
+          />
+
+          <motion.div
+            className="relative w-full"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+          <GlassPanel
+            darkMode={darkMode}
+            prefersReducedMotion={prefersReducedMotion}
+            panelClass={panel}
+            topEdge={topEdge}
+            wash={panelWash}
+          >
+            <div className={`border-b px-6 py-6 md:px-10 md:py-8 ${divider}`}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className={`h-px w-10 bg-gradient-to-r ${gradient}`} aria-hidden="true" />
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>
+                  Overview
+                </p>
+              </div>
+              <div className={`overflow-hidden ${nested}`}>
+                <div className={`grid grid-cols-3 divide-x divide-y sm:divide-y-0 ${divider}`}>
+                  {summaryStats.map((stat, index) => (
+                    <motion.div
+                      key={stat.label}
+                      className={`group relative px-3 py-4 text-center transition-colors md:px-5 md:py-5 ${
+                        cellHover
+                      }`}
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05, duration: 0.35 }}
+                    >
+                      <span
+                        className={`mx-auto mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl ${
+                          darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'
+                        }`}
+                      >
+                        <FontAwesomeIcon icon={stat.icon} className={`text-xs ${accent}`} aria-hidden="true" />
+                      </span>
+                      <p
+                        className={`text-xl font-bold tabular-nums md:text-2xl ${
+                          stat.label === 'Achievements'
+                            ? `bg-gradient-to-r bg-clip-text text-transparent ${gradient}`
+                            : heading
+                        }`}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className={`mt-1 text-[10px] font-medium md:text-xs ${muted}`}>{stat.label}</p>
+                      <div
+                        className={`pointer-events-none absolute inset-x-4 bottom-0 h-0.5 scale-x-0 bg-gradient-to-r transition-transform duration-300 group-hover:scale-x-100 group-focus-visible:scale-x-100 ${gradient}`}
+                        aria-hidden="true"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <motion.div
+              className="relative px-6 py-8 md:px-10 md:py-10"
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.1 }}
+            >
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`h-px w-10 bg-gradient-to-r ${gradient}`} aria-hidden="true" />
+                  <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>
+                    Timeline
+                    <span className={`ml-2 normal-case tracking-normal ${body}`}>
+                      · {experiences.length} roles
+                    </span>
+                  </p>
+                </div>
+                {experiences.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={expandAll}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
+                      }`}
+                    >
+                      Expand all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={collapseAll}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
+                      }`}
+                    >
+                      Collapse all
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {experiences.length > 1 && (
+                <div className="mb-8 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {experiences.map((exp, index) => (
+                    <button
+                      key={getEntryId(exp)}
+                      type="button"
+                      onClick={() => jumpToEntry(index, getEntryId(exp))}
+                      className={`shrink-0 rounded-[var(--radius-glass-lg)] px-3.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        expandedIds.has(getEntryId(exp))
+                          ? 'liquid-glass-btn-primary text-white'
+                          : darkMode
+                            ? 'liquid-glass-chip-dark text-slate-200'
+                            : 'liquid-glass-chip text-slate-700'
+                      }`}
+                    >
+                      <span className="block text-xs font-semibold leading-tight">{exp.company}</span>
+                      <span className={`mt-0.5 block text-[10px] font-medium ${
+                        expandedIds.has(getEntryId(exp)) ? 'text-white/75' : muted
+                      }`}
+                      >
+                        {exp.role}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div
+                className={`absolute left-[15px] top-[4.5rem] bottom-8 w-1 overflow-hidden rounded-full md:left-1/2 md:w-0.5 md:-translate-x-1/2 ${
+                  darkMode ? 'liquid-glass-progress-dark' : 'liquid-glass-progress'
+                }`}
+                aria-hidden="true"
+              >
+                <motion.div
+                  className={`absolute top-0 w-full rounded-full ${
+                    darkMode
+                      ? 'bg-gradient-to-b from-blue-400 via-purple-400 to-pink-400'
+                      : 'bg-gradient-to-b from-blue-600 via-purple-600 to-pink-600'
+                  }`}
+                  initial={{ height: '0%' }}
+                  whileInView={{ height: '100%' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 1.4, ease: 'easeInOut' }}
+                />
+              </div>
+
+              <div className="space-y-4 md:space-y-8">
+                {experiences.map((exp, index) => {
+                  const isRight = index % 2 === 0;
+                  const accentColor = ACCENT_GRADIENTS[index % ACCENT_GRADIENTS.length];
+
+                  return (
+                    <motion.article
+                      key={`${exp.company}-${exp.period}`}
+                      variants={itemVariants}
+                      className={`relative md:grid md:grid-cols-2 md:gap-x-14 ${
+                        index > 0 ? `border-t md:border-t-0 ${divider}` : ''
+                      } ${gridGap} md:bg-transparent`}
+                      aria-label={`${exp.role} at ${exp.company}`}
+                    >
+                      <motion.div
+                        className={`absolute left-[11px] top-8 z-10 h-3.5 w-3.5 -translate-x-0 rounded-full md:left-1/2 md:top-10 md:h-4 md:w-4 md:-translate-x-1/2 bg-gradient-to-br shadow-lg ${accentColor} ${
+                          darkMode ? 'shadow-blue-500/20' : 'shadow-blue-500/15'
+                        }`}
+                        whileHover={prefersReducedMotion ? undefined : { scale: 1.25 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        {!prefersReducedMotion && exp.current && (
+                          <motion.div
+                            className={`absolute inset-0 rounded-full ${darkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
+                            animate={{ scale: [1, 2.2, 1], opacity: [0.5, 0, 0.5] }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                            aria-hidden="true"
+                          />
+                        )}
+                      </motion.div>
+
+                      {isRight && <div className="hidden md:block" aria-hidden="true" />}
+
+                      <ExperienceEntry
+                        exp={exp}
+                        index={index}
+                        darkMode={darkMode}
+                        heading={heading}
+                        body={body}
+                        muted={muted}
+                        accent={accent}
+                        accentColor={accentColor}
+                        cellBg={cellBg}
+                        cellHover={cellHover}
+                        divider={divider}
+                        prefersReducedMotion={prefersReducedMotion}
+                        isRight={isRight}
+                        isExpanded={expandedIds.has(getEntryId(exp))}
+                        onToggle={() => toggleEntry(getEntryId(exp))}
+                      />
+
+                      {!isRight && <div className="hidden md:block" aria-hidden="true" />}
+                    </motion.article>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <div
+              className={`flex flex-col items-center justify-between gap-5 border-t px-6 py-8 sm:flex-row md:px-10 lg:px-12 ${
+                divider
+              } ${footerWash}`}
+            >
+              <p className={`max-w-md text-center text-sm sm:text-left md:text-base ${body}`}>
+                Interested in how this experience translates to your team or project?
+              </p>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <MotionLink
+                  to="/contact"
+                  className="liquid-glass-btn-primary group inline-flex min-h-12 flex-1 items-center justify-center gap-2 px-6 py-3 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex-none"
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Get in Touch
+                  <FontAwesomeIcon icon={faArrowRight} className="text-sm transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </MotionLink>
+                <MotionLink
+                  to="/projects"
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 px-6 py-3 font-semibold sm:flex-none ${
+                    darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  View Projects
+                </MotionLink>
+                <MotionLink
+                  to="/education"
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 px-6 py-3 font-semibold sm:flex-none ${
+                    darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Education
+                </MotionLink>
+              </div>
+            </div>
+          </GlassPanel>
+          </motion.div>
+      </div>
+    </section>
+  );
 };
 
 Experience.propTypes = {
-	darkMode: PropTypes.bool.isRequired,
+  darkMode: PropTypes.bool.isRequired,
 };
 
 export default React.memo(Experience);

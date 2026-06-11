@@ -8,597 +8,437 @@ import React, {
   useRef,
 } from 'react';
 import PropTypes from 'prop-types';
-import { motion, useAnimation, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { IoIosArrowDown } from 'react-icons/io';
-import { loadSlim } from "@tsparticles/slim";
-import { useInView } from 'react-intersection-observer';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, TorusKnot } from '@react-three/drei';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowDown, faCode, faRocket, faMagicWandSparkles } from '@fortawesome/free-solid-svg-icons';
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+} from 'framer-motion';
+import { loadSlim } from '@tsparticles/slim';
 import { Link } from 'react-router-dom';
 import { TypeAnimation } from 'react-type-animation';
-import Card3D from './Card3D';
 import Grid3DBackground from './Grid3DBackground';
-import FloatingElements from './FloatingElements';
-import ErrorBoundary from './ErrorBoundary';
+import SectionBackground from './SectionBackground';
+import GlassPanel from './GlassPanel';
 import useReducedMotion from '../hooks/useReducedMotion';
-import { containerVariants, itemVariants, buttonVariants } from '../utils/animationVariants';
+import { containerVariants, itemVariants } from '../utils/animationVariants';
+import { heroSkills, siteMeta } from './siteData';
+import { getSectionTheme, getBluePanelWash } from './themeTokens';
 
-// Lazy load components
-const Typewriter = lazy(() => import('typewriter-effect'));
 const Particles = lazy(() => import('@tsparticles/react'));
 
-// Hero-specific animation variants
-const heroContainerVariants = containerVariants(0.2);
+const MotionLink = motion.create(Link);
 
-const floatingIconVariants = {
-  animate: {
-    y: [0, -10, 0],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-};
+const heroContainerVariants = containerVariants(0.12);
 
-/**
- * ParticleBackground Component
- * Renders the particle effect using react-tsparticles.
- */
-const ParticleBackground = ({ darkMode, particleCount, isMobile }) => {
+const TYPE_SEQUENCE = [
+  siteMeta.name, 3000,
+  `a ${siteMeta.title}`, 2200,
+  'a Builder', 2000,
+  'a Problem Solver', 2000,
+  'an Innovator', 2000,
+];
+
+const TAGLINE_HIGHLIGHT = /(digital experiences)/i;
+const SPRING = { stiffness: 140, damping: 22, mass: 0.6 };
+const DESKTOP_MQ = '(min-width: 1024px)';
+
+const ParticleBackground = ({ darkMode, active }) => {
   const particlesInit = useCallback(async (engine) => {
     try {
-      console.log("Initializing tsParticles");
       await loadSlim(engine);
     } catch (error) {
-      console.error("Failed to initialize tsParticles:", error);
+      console.error('Failed to initialize tsParticles:', error);
     }
   }, []);
 
   const particleOptions = useMemo(() => ({
-    fpsLimit: isMobile ? 40 : 60,
+    fpsLimit: 60,
     fullScreen: { enable: false },
     detectRetina: true,
-    background: {
-      color: {
-        value: "transparent",
-      },
-    },
+    background: { color: { value: 'transparent' } },
     particles: {
-      number: {
-        value: isMobile ? 20 : 35,
-        density: {
-          enable: true,
-          area: isMobile ? 800 : 1000,
-        },
-      },
-      color: {
-        value: darkMode ? ['#4F46E5', '#818CF8'] : ['#3B82F6', '#60A5FA'],
-      },
-      shape: {
-        type: "circle",
-      },
-      opacity: {
-        value: isMobile ? 0.5 : 0.3,
-        random: true,
-        animation: {
-          enable: true,
-          speed: 0.8,
-          minimumValue: 0.2,
-          sync: false,
-        },
-      },
-      size: {
-        value: isMobile ? 3 : { min: 1, max: 3 },
-        random: true,
-        animation: {
-          enable: true,
-          speed: 1,
-          minimumValue: 1,
-          sync: false,
-        },
-      },
+      number: { value: 18, density: { enable: true, area: 1250 } },
+      color: { value: darkMode ? ['#4F46E5', '#818CF8'] : ['#3B82F6', '#60A5FA'] },
+      shape: { type: 'circle' },
+      opacity: { value: 0.12, random: true },
+      size: { value: { min: 1, max: 2 }, random: true },
       links: {
         enable: true,
-        distance: isMobile ? 120 : 150,
-        color: darkMode ? "#4F46E5" : "#3B82F6",
-        opacity: isMobile ? 0.5 : 0.3,
-        width: isMobile ? 2 : 1,
+        distance: 110,
+        color: darkMode ? '#4F46E5' : '#3B82F6',
+        opacity: 0.1,
+        width: 1,
       },
-      move: {
-        enable: true,
-        speed: isMobile ? 1 : 1.5,
-        direction: "none",
-        random: true,
-        straight: false,
-        outModes: {
-          default: "bounce",
-          top: "bounce",
-          left: "bounce",
-          right: "bounce",
-          bottom: "bounce",
-        },
-        attract: {
-          enable: true,
-          rotateX: isMobile ? 200 : 600,
-          rotateY: isMobile ? 400 : 1200,
-        },
-      },
+      move: { enable: true, speed: 0.75, outModes: { default: 'bounce' } },
     },
     interactivity: {
-      detectsOn: "canvas",
+      detectsOn: 'canvas',
       events: {
-        onHover: {
-          enable: true,
-          mode: isMobile ? "bubble" : ["grab", "bubble"],
-        },
-        onClick: {
-          enable: true,
-          mode: "push",
-        },
+        onHover: { enable: true, mode: 'grab' },
+        onClick: { enable: true, mode: 'push' },
         resize: true,
       },
       modes: {
-        grab: {
-          distance: isMobile ? 140 : 180,
-          links: {
-            opacity: isMobile ? 0.6 : 0.4,
-            color: darkMode ? "#6366F1" : "#60A5FA",
-          },
-        },
-        bubble: {
-          distance: isMobile ? 150 : 200,
-          size: isMobile ? 6 : 4,
-          duration: 2,
-          opacity: isMobile ? 0.8 : 0.6,
-        },
-        push: {
-          quantity: isMobile ? 3 : 4,
-        },
-        repulse: {
-          distance: 100,
-          duration: 0.4,
-        },
+        grab: { distance: 115, links: { opacity: 0.2, color: darkMode ? '#6366F1' : '#60A5FA' } },
+        push: { quantity: 2 },
       },
     },
-    responsive: [
-      {
-        maxWidth: 768,
-        options: {
-          particles: {
-            number: {
-              value: 20,
-            },
-          },
-        },
-      },
-      {
-        maxWidth: 425,
-        options: {
-          particles: {
-            number: {
-              value: 15,
-            },
-          },
-        },
-      },
-    ],
-  }), [darkMode, isMobile]);
+  }), [darkMode]);
+
+  if (!active) return null;
 
   return (
-    <Suspense fallback={<div className="absolute inset-0 z-0 bg-transparent" />}>
-      <Particles
-        id="tsparticles"
-        init={particlesInit}
-        className="absolute inset-0 z-0"
-        options={particleOptions}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          zIndex: 0,
-          top: 0,
-          left: 0,
-        }}
-      />
+    <Suspense fallback={<div className="absolute inset-0 z-0" aria-hidden="true" />}>
+      <Particles id="tsparticles" init={particlesInit} className="absolute inset-0 z-0" options={particleOptions} />
     </Suspense>
   );
 };
 
 ParticleBackground.propTypes = {
   darkMode: PropTypes.bool.isRequired,
-  particleCount: PropTypes.number.isRequired,
-  isMobile: PropTypes.bool.isRequired,
+  active: PropTypes.bool.isRequired,
 };
 
-/**
- * Hero Component
- * Main hero section with animated text, particle background, and scroll down arrow.
- */
-const Hero = ({
-  darkMode = false,
-  backgroundImage = '/path-to-your-image.jpg',
-}) => {
+const AmbientOrbs = ({ darkMode, prefersReducedMotion }) => (
+  <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div className={`absolute -top-24 left-[18%] h-64 w-64 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-400/20'}`} />
+    <div className={`absolute -bottom-28 right-[14%] h-72 w-72 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/8' : 'bg-purple-400/16'}`} />
+    {!prefersReducedMotion && (
+      <motion.div
+        className={`absolute top-[24%] right-[14%] h-24 w-24 rounded-full blur-2xl ${darkMode ? 'bg-cyan-400/8' : 'bg-cyan-300/16'}`}
+        animate={{ y: [0, -10, 0], opacity: [0.4, 0.65, 0.4] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    )}
+    <div
+      className={`absolute inset-x-0 bottom-0 h-32 ${
+        darkMode
+          ? 'bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent'
+          : 'bg-gradient-to-t from-slate-100 via-slate-50/60 to-transparent'
+      }`}
+    />
+  </div>
+);
+
+AmbientOrbs.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+  prefersReducedMotion: PropTypes.bool.isRequired,
+};
+
+const Hero = ({ darkMode = false }) => {
   const containerRef = useRef(null);
   const { scrollY } = useScroll();
   const prefersReducedMotion = useReducedMotion();
 
-  // Enhanced scroll-driven animations (respecting reduced motion)
-  const y = useTransform(scrollY, [0, 500], prefersReducedMotion ? [0, 0] : [0, 200]);
-  const opacity = useTransform(scrollY, [0, 200], [1, prefersReducedMotion ? 1 : 0]);
-  const scale = useTransform(scrollY, [0, 200], prefersReducedMotion ? [1, 1] : [1, 0.95]);
-  const rotate = useTransform(scrollY, [0, 500], prefersReducedMotion ? [0, 0] : [0, -5]);
-  const parallaxY = useTransform(scrollY, [0, 1000], prefersReducedMotion ? [0, 0] : [0, 300]);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
 
-  const controls = useAnimation();
-  const { ref, inView } = useInView({
-    triggerOnce: true,
-    threshold: 0.3,
-  });
+  const y = useTransform(scrollY, [0, 480], prefersReducedMotion ? [0, 0] : [0, 44]);
+  const opacity = useTransform(scrollY, [0, 420], [1, prefersReducedMotion ? 1 : 0.92]);
 
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const panelX = useTransform(mouseX, [-0.5, 0.5], prefersReducedMotion ? [0, 0] : [-5, 5]);
+  const panelY = useTransform(mouseY, [-0.5, 0.5], prefersReducedMotion ? [0, 0] : [-3, 3]);
+  const springX = useSpring(panelX, SPRING);
+  const springY = useSpring(panelY, SPRING);
 
-  // Optimized particle count calculation (reduced for better performance)
-  const getParticleCount = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      // Reduce particle count for better performance
-      if (window.innerWidth < 640) return 8;
-      if (window.innerWidth < 768) return 12;
-      if (window.innerWidth < 1024) return 20;
-      return 30;
-    }
-    return 30;
+  const [gridMousePos, setGridMousePos] = useState({ x: 0, y: 0 });
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [tabVisible, setTabVisible] = useState(true);
+  const gridRafRef = useRef(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia(DESKTOP_MQ);
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
   }, []);
 
-  const [particleCount, setParticleCount] = useState(getParticleCount);
-
-  // Debounced resize handler with RAF
   useEffect(() => {
-    let rafId;
-    let timeoutId;
+    const handleVisibility = () => setTabVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
-    const handleResize = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          setIsMobile(window.innerWidth < 768);
-          setParticleCount(getParticleCount);
-        }, 150);
-      });
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-      cancelAnimationFrame(rafId);
-    };
-  }, [getParticleCount]);
-
-  // Memoize the mouse movement handler
   const handleMouseMove = useCallback((e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    const nx = (e.clientX - rect.left) / rect.width - 0.5;
+    const ny = (e.clientY - rect.top) / rect.height - 0.5;
 
-    setMousePosition({ x, y });
+    mouseX.set(nx);
+    mouseY.set(ny);
+
+    if (!gridRafRef.current) {
+      gridRafRef.current = requestAnimationFrame(() => {
+        setGridMousePos({ x: nx, y: ny });
+        gridRafRef.current = null;
+      });
+    }
+  }, [mouseX, mouseY]);
+
+  const handleMouseLeave = useCallback(() => {
+    mouseX.set(0);
+    mouseY.set(0);
+    setGridMousePos({ x: 0, y: 0 });
+  }, [mouseX, mouseY]);
+
+  useEffect(() => () => {
+    if (gridRafRef.current) cancelAnimationFrame(gridRafRef.current);
   }, []);
 
+  const { panel, topEdge, sectionBg } = getSectionTheme(darkMode);
+  const panelWash = getBluePanelWash(darkMode);
+  const gradientText = darkMode
+    ? 'from-blue-300 via-purple-300 to-pink-300'
+    : 'from-blue-600 via-purple-600 to-pink-600';
+  const bodyText = darkMode ? 'text-slate-300' : 'text-slate-700';
+  const headingMuted = darkMode ? 'text-slate-200' : 'text-slate-800';
+  const microLabel = darkMode ? 'text-slate-500' : 'text-slate-500';
 
-
-  // Memoize Grid3DBackground
-  const MemoizedGrid3DBackground = useMemo(() => {
-    return !isMobile && <Grid3DBackground darkMode={darkMode} mousePosition={mousePosition} />;
-  }, [isMobile, darkMode, mousePosition]);
-
-  // Memoize FloatingElements
-  const MemoizedFloatingElements = useMemo(() => {
-    return <FloatingElements darkMode={darkMode} />;
-  }, [darkMode]);
-
-  // Memoize ParticleBackground
-  const MemoizedParticleBackground = useMemo(() => {
-    return (
-      <ParticleBackground
-        darkMode={darkMode}
-        particleCount={particleCount}
-        isMobile={isMobile}
-      />
-    );
-  }, [darkMode, particleCount, isMobile]);
+  const taglineParts = siteMeta.tagline.split(TAGLINE_HIGHLIGHT);
+  const showEffects = !prefersReducedMotion && isDesktop && tabVisible;
 
   return (
     <motion.section
+      id="hero"
       ref={containerRef}
-      role="banner"
-      aria-label="Hero section"
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden
-        ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}
+      aria-label="Introduction"
+      className={`section-shell relative flex w-full min-h-[calc(100dvh-5rem)] items-center overflow-hidden py-10 sm:py-12 md:py-16 ${sectionBg}`}
       initial="hidden"
       animate="visible"
       variants={heroContainerVariants}
-      onMouseMove={!prefersReducedMotion ? handleMouseMove : undefined}
+      onMouseMove={showEffects ? handleMouseMove : undefined}
+      onMouseLeave={showEffects ? handleMouseLeave : undefined}
     >
-      {/* Enhanced background effects (disabled for reduced motion) */}
-      {!prefersReducedMotion && MemoizedGrid3DBackground}
-      {!prefersReducedMotion && MemoizedFloatingElements}
-      {!prefersReducedMotion && MemoizedParticleBackground}
+      <SectionBackground darkMode={darkMode} />
+      <AmbientOrbs darkMode={darkMode} prefersReducedMotion={prefersReducedMotion} />
+
+      {showEffects && <Grid3DBackground darkMode={darkMode} mousePosition={gridMousePos} />}
+      <ParticleBackground darkMode={darkMode} active={showEffects} />
 
       <motion.div
-        className="container mx-auto px-4 z-10"
-        style={prefersReducedMotion ? {} : { y, opacity, scale, rotateX: rotate }}
+        className="page-wrap relative z-10 mx-auto w-full max-w-6xl px-4 md:px-6"
+        style={prefersReducedMotion ? {} : { y, opacity }}
       >
         <motion.div
-          ref={ref}
-          className="max-w-6xl mx-auto text-center"
-          variants={heroContainerVariants}
+          className="relative w-full"
+          style={showEffects ? { x: springX, y: springY } : undefined}
         >
-          {/* Role badge with enhanced animation */}
-          <motion.div
-            variants={itemVariants(0.6)}
-            className="mb-8"
-            whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
-            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+          <GlassPanel
+            darkMode={darkMode}
+            prefersReducedMotion={prefersReducedMotion}
+            panelClass={panel}
+            topEdge={topEdge}
+            wash={panelWash}
+            edgeInset="inset-x-6 xl:inset-x-10"
+            className="px-5 py-9 sm:px-8 sm:py-11 md:px-10 md:py-12 xl:px-12 xl:py-14"
           >
-            <Card3D darkMode={darkMode} className="inline-block">
-              <motion.span
-                className={`px-6 py-2 rounded-full text-sm font-medium inline-block
-                  ${darkMode ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-600'}
-                  transition-all duration-300`}
-                whileHover={prefersReducedMotion ? {} : {
-                  backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
-                }}
-                role="text"
-                aria-label="Job title: Full Stack Developer"
+          <div className="mx-auto max-w-3xl text-center">
+              <motion.p
+                variants={itemVariants(0.3)}
+                className={`mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] ${microLabel}`}
               >
-                Full Stack Developer
-              </motion.span>
-            </Card3D>
-          </motion.div>
+                Welcome
+              </motion.p>
 
-          {/* Enhanced heading with dynamic typing */}
-          <motion.h1
-            variants={itemVariants}
-            className="text-5xl sm:text-6xl md:text-8xl font-extrabold mb-8 leading-tight"
-          >
-            <motion.div
-              className="block mb-2"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-            >
-              <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>
-                Hi, I'm
-              </span>
-            </motion.div>
-            <motion.div
-              className="relative inline-block"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            >
-              <span className={`bg-gradient-to-r bg-clip-text text-transparent inline-block
-                ${darkMode
-                  ? 'from-blue-400 via-purple-400 to-pink-400'
-                  : 'from-blue-600 via-purple-600 to-pink-600'
-                }`}>
-                <TypeAnimation
-                  sequence={[
-                    'Nikita', 3000,
-                    'a Developer', 2000,
-                    'a Designer', 2000,
-                    'an Innovator', 2000,
-                    'a Problem Solver', 2000,
-                  ]}
-                  wrapper="div"
-                  speed={50}
-                  deletionSpeed={65}
-                  repeat={Infinity}
-                  cursor={true}
-                  className="inline-block min-h-[1.2em] whitespace-pre"
-                />
-              </span>
-
-              {/* Animated underline */}
-              <motion.div
-                className={`h-1.5 md:h-2 rounded-full mt-2 bg-gradient-to-r ${darkMode
-                  ? 'from-blue-400 via-purple-400 to-pink-400'
-                  : 'from-blue-600 via-purple-600 to-pink-600'
+              <motion.div variants={itemVariants(0.4)} className="mb-6 md:mb-7">
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-sm font-medium ${
+                    darkMode ? 'liquid-glass-chip-dark text-blue-300' : 'liquid-glass-chip text-blue-600'
                   }`}
-                initial={{ width: 0 }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 1, delay: 1 }}
-              />
-            </motion.div>
-          </motion.h1>
-
-          {/* Enhanced description with badges */}
-          <motion.div
-            variants={itemVariants}
-            className="mb-12 space-y-6"
-          >
-            <motion.p
-              className={`text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed font-medium
-                ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-            >
-              Crafting <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>digital experiences</span> with modern technologies and creative solutions.
-            </motion.p>
-
-            <motion.div
-              className="flex flex-wrap justify-center gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 1 }}
-            >
-              {['React', 'Node.js', 'TypeScript', 'UI/UX'].map((skill, index) => (
-                <motion.span
-                  key={skill}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-md border ${darkMode
-                    ? 'bg-gray-800/60 text-gray-200 border-gray-700/50'
-                    : 'bg-white/60 text-gray-700 border-gray-300/50'
-                    } shadow-lg`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 1.1 + index * 0.1 }}
-                  whileHover={{
-                    scale: 1.1,
-                    y: -5,
-                    backgroundColor: darkMode ? '#3B82F6' : '#2563EB',
-                    color: '#ffffff',
-                    borderColor: darkMode ? '#60A5FA' : '#3B82F6',
-                    boxShadow: darkMode
-                      ? '0 10px 25px rgba(59, 130, 246, 0.4)'
-                      : '0 10px 25px rgba(37, 99, 235, 0.3)',
-                  }}
                 >
-                  {skill}
-                </motion.span>
-              ))}
-            </motion.div>
-          </motion.div>
+                  <motion.span
+                    className={`h-1.5 w-1.5 rounded-full ${darkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
+                    animate={prefersReducedMotion ? undefined : { scale: [1, 1.3, 1], opacity: [0.65, 1, 0.65] }}
+                    transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                    aria-hidden="true"
+                  />
+                  {siteMeta.title}
+                </span>
+              </motion.div>
 
-          {/* Enhanced CTA buttons with liquid effects */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap justify-center gap-4"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link
-                to="/projects"
-                className={`px-8 py-4 rounded-2xl font-semibold inline-flex items-center gap-2 relative overflow-hidden group backdrop-blur-xl
-                  ${darkMode
-                    ? 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/20'
-                    : 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/30'
-                  } shadow-2xl`}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
+              <motion.h1
+                variants={itemVariants}
+                className="mb-5 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl md:mb-6 md:text-6xl xl:text-[4.25rem]"
               >
-                {/* Animated gradient overlay */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 opacity-0"
-                  whileHover={{ opacity: 0.3 }}
-                  transition={{ duration: 0.3 }}
-                />
-
-                {/* Liquid shimmer effect */}
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)`,
-                    transform: 'translateX(-100%)',
-                  }}
-                  animate={isHovered ? {
-                    transform: ['translateX(-100%)', 'translateX(100%)'],
-                  } : {}}
-                  transition={{
-                    duration: 0.8,
-                    ease: "easeInOut",
-                  }}
-                />
-
-                {/* Pulsing glow */}
-                <motion.div
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-400 blur-xl opacity-0"
-                  animate={{
-                    opacity: isHovered ? [0, 0.5, 0] : 0,
-                    scale: isHovered ? [1, 1.2, 1] : 1,
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: isHovered ? Infinity : 0,
-                  }}
-                />
-
-                <motion.div
-                  className="relative z-10 flex items-center gap-2"
-                  animate={{
-                    x: isHovered ? 5 : 0,
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <span>View My Work</span>
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    animate={{
-                      x: isHovered ? 4 : 0,
-                    }}
-                    transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
+                <span className={`mb-2 block text-2xl font-semibold sm:text-3xl md:text-4xl ${headingMuted}`}>
+                  Hi, I'm
+                </span>
+                <span className="block">
+                  <span
+                    className={`inline-block min-h-[1.15em] min-w-[11ch] bg-gradient-to-r bg-clip-text text-transparent sm:min-w-[14ch] md:min-w-[16ch] ${gradientText}`}
                   >
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </motion.svg>
-                </motion.div>
-              </Link>
-            </motion.div>
+                    {prefersReducedMotion ? (
+                      siteMeta.name
+                    ) : (
+                      <TypeAnimation
+                        sequence={TYPE_SEQUENCE}
+                        wrapper="span"
+                        speed={50}
+                        deletionSpeed={65}
+                        repeat={Infinity}
+                        cursor
+                        cursorClassName="hero-type-cursor"
+                        preRenderFirstString
+                      />
+                    )}
+                  </span>
+                  <motion.span
+                    className={`mx-auto mt-4 block h-1 w-full max-w-[280px] rounded-full bg-gradient-to-r ${gradientText}`}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.7, delay: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ originX: 0 }}
+                    aria-hidden="true"
+                  />
+                </span>
+              </motion.h1>
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link
-                to="/contact"
-                className={`px-8 py-4 rounded-2xl font-semibold inline-flex items-center gap-2 relative overflow-hidden group backdrop-blur-xl
-                  ${darkMode
-                    ? 'bg-gray-800/50 text-white border border-white/20 hover:bg-gray-700/50'
-                    : 'bg-white/50 text-gray-900 border border-gray-200/50 hover:bg-white/70'
-                  } transition-all duration-300 shadow-xl`}
+              <motion.p
+                variants={itemVariants}
+                className={`mx-auto mb-8 max-w-2xl text-pretty text-base leading-relaxed sm:text-lg md:text-xl ${bodyText}`}
               >
-                {/* Ripple effect on hover */}
-                <motion.div
-                  className={`absolute inset-0 rounded-2xl ${darkMode ? 'bg-white/10' : 'bg-gray-900/5'
+                {taglineParts.map((part, index) => (
+                  TAGLINE_HIGHLIGHT.test(part) ? (
+                    <span key={index} className={`font-semibold ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                      {part}
+                    </span>
+                  ) : (
+                    <React.Fragment key={index}>{part}</React.Fragment>
+                  )
+                ))}
+              </motion.p>
+
+              <motion.div variants={itemVariants} className="mb-3">
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${microLabel}`}>
+                  Core stack
+                </p>
+              </motion.div>
+
+              <motion.div
+                variants={itemVariants}
+                className="mb-9 flex flex-wrap justify-center gap-2"
+                role="list"
+                aria-label="Core skills"
+              >
+                {heroSkills.map((skill, index) => (
+                  <MotionLink
+                    key={skill}
+                    to="/skills"
+                    role="listitem"
+                    aria-label={`View ${skill} skills`}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.48 + index * 0.05, duration: 0.32 }}
+                    whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium sm:text-sm ${
+                      darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
                     }`}
-                  initial={{ scale: 0, opacity: 1 }}
-                  whileHover={{ scale: 2, opacity: 0 }}
-                  transition={{ duration: 0.6 }}
-                />
-
-                <motion.div
-                  className="relative z-10 flex items-center gap-2"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <span>Contact Me</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
                   >
+                    {skill}
+                  </MotionLink>
+                ))}
+              </motion.div>
+
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-col justify-center gap-3 sm:flex-row sm:items-center"
+              >
+                <MotionLink
+                  to="/projects"
+                  className="liquid-glass-btn-primary group inline-flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:w-auto"
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  View My Work
+                  <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </MotionLink>
+
+                <MotionLink
+                  to="/contact"
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:w-auto ${
+                    darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Contact Me
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
-                </motion.div>
-              </Link>
-            </motion.div>
-          </motion.div>
+                </MotionLink>
+              </motion.div>
+
+              <motion.nav
+                variants={itemVariants}
+                aria-label="Explore portfolio"
+                className="mt-6 flex flex-wrap items-center justify-center gap-2"
+              >
+                <span className={`mr-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${microLabel}`}>
+                  Explore
+                </span>
+                {[
+                  { to: '/about', label: 'About' },
+                  { to: '/skills', label: 'Skills' },
+                  { to: '/experience', label: 'Experience' },
+                  { to: '/education', label: 'Education' },
+                ].map((link) => (
+                  <MotionLink
+                    key={link.to}
+                    to={link.to}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold sm:text-sm ${
+                      darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
+                    }`}
+                    whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {link.label}
+                  </MotionLink>
+                ))}
+              </motion.nav>
+          </div>
+          </GlassPanel>
         </motion.div>
       </motion.div>
+
+      <MotionLink
+        to="/about"
+        aria-label="Explore the about section"
+        className={`absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+          darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+        }`}
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.45 }}
+        whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Explore</span>
+        <motion.span
+          aria-hidden="true"
+          animate={prefersReducedMotion ? undefined : { y: [0, 5, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${
+            darkMode ? 'liquid-glass-chip-dark' : 'liquid-glass-chip'
+          }`}
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </motion.span>
+      </MotionLink>
     </motion.section>
   );
 };
 
 Hero.propTypes = {
   darkMode: PropTypes.bool,
-  backgroundImage: PropTypes.string,
-};
-
-Hero.defaultProps = {
-  darkMode: false,
-  backgroundImage: '/path-to-your-image.jpg',
 };
 
 export default React.memo(Hero);

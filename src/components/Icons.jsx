@@ -1,283 +1,263 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
+import useReducedMotion from '../hooks/useReducedMotion';
 
-export const Icons = {
-  Home: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1, ease: "easeInOut" }}
-      />
-      <motion.path
-        d="M12 3L5 10V20C5 20.5523 5.44772 21 6 21H18C18.5523 21 19 20.5523 19 20V10L12 3Z"
+const STROKE = {
+  stroke: 'currentColor',
+  strokeWidth: 1.75,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  fill: 'none',
+};
+
+const EASE = [0.4, 0, 0.2, 1];
+
+const iconPropTypes = {
+  className: PropTypes.string,
+  animated: PropTypes.bool,
+};
+
+const Path = ({ d, delay = 0, animate = true, strokeWidth, ...rest }) => {
+  if (!animate) {
+    return <path d={d} {...STROKE} strokeWidth={strokeWidth ?? STROKE.strokeWidth} {...rest} />;
+  }
+
+  return (
+    <motion.path
+      d={d}
+      {...STROKE}
+      strokeWidth={strokeWidth ?? STROKE.strokeWidth}
+      initial={{ pathLength: 0, opacity: 0.4 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.5, delay, ease: EASE }}
+      {...rest}
+    />
+  );
+};
+
+Path.propTypes = {
+  d: PropTypes.string.isRequired,
+  delay: PropTypes.number,
+  animate: PropTypes.bool,
+  strokeWidth: PropTypes.number,
+};
+
+const IconBase = ({ className = '', animated = true, children }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = animated && !prefersReducedMotion;
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        className="opacity-[0.14]"
         fill="currentColor"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.1] }}
-        transition={{ duration: 0.5, delay: 0.8 }}
+        stroke="none"
       />
+      {children(shouldAnimate)}
     </svg>
-  ),
-  About: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.5 }}
-      />
-      <motion.path
-        d="M6 21V19C6 17.9391 6.42143 16.9217 7.17157 16.1716C7.92172 15.4214 8.93913 15 10 15H14C15.0609 15 16.0783 15.4214 16.8284 16.1716C17.5786 16.9217 18 17.9391 18 19V21"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0, y: 10 }}
-        animate={{ pathLength: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      />
-    </svg>
-  ),
-  Skills: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      />
-      <motion.path
-        d="M12 15L8.5 12M12 15L15.5 12M12 15V3"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      />
-      <motion.path
-        d="M12 3V15"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{
-          pathLength: [0, 1],
-          opacity: [0, 1],
-          transition: { duration: 0.3, delay: 0.6 }
-        }}
-      />
-    </svg>
-  ),
-  Experience: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M21 13.2537C18.7505 15.3205 15.9084 16.5 12.8031 16.5C9.69774 16.5 6.85562 15.3205 4.60617 13.2537M12.8031 16.5V20M4.60617 13.2537L3 16.5M4.60617 13.2537L7.80309 11.3769M21 13.2537L22.6061 16.5M21 13.2537L17.8031 11.3769M12.8031 3V7.5M7.80309 11.3769L6.19691 8.13084M7.80309 11.3769L12.8031 7.5M17.8031 11.3769L19.4092 8.13084M17.8031 11.3769L12.8031 7.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1, ease: "easeInOut" }}
-      />
-    </svg>
-  ),
-  Education: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M12 14L3 7L12 0L21 7L12 14ZM12 14V21M5 9.5V16.5L12 21L19 16.5V9.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={{ pathLength: 0, y: -5 }}
-        animate={{ pathLength: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-      />
-    </svg>
-  ),
-  Projects: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M4 7C4 6.44772 4.44772 6 5 6H19C19.5523 6 20 6.44772 20 7V17C20 17.5523 19.5523 18 19 18H5C4.44772 18 4 17.5523 4 17V7Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.5 }}
-      />
-      <motion.path
-        d="M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M12 10V14M10 12H14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      />
-    </svg>
-  ),
-  Contact: ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <motion.path
-        d="M3 8L10.8906 13.2604C11.5624 13.7083 12.4376 13.7083 13.1094 13.2604L21 8M5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
-      />
-    </svg>
-  ),
-  DarkMode: ({ className, isDark }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      
-      {/* Sun/Moon Base */}
-      <motion.circle
-        cx="12"
-        cy="12"
-        r="6"
-        stroke="currentColor"
-        strokeWidth="2"
-        initial={false}
-        animate={isDark ? {
-          fill: "currentColor",
-          scale: [1, 1.2, 0.9, 1],
-          filter: "url(#glow)"
-        } : {
-          fill: "none",
-          scale: 1,
-          filter: "none"
-        }}
-        transition={{ duration: 0.7, ease: "easeInOut" }}
-      />
+  );
+};
 
-      {/* Sun Rays */}
-      {[...Array(12)].map((_, i) => (
+IconBase.propTypes = {
+  className: PropTypes.string,
+  animated: PropTypes.bool,
+  children: PropTypes.func.isRequired,
+};
+
+const Home = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 01-1.5 1.5H5.5A1.5 1.5 0 014 19v-8.5z" delay={0} animate={a} />
+        <Path d="M9.5 20.5v-5a2.5 2.5 0 015 0v5" delay={0.1} animate={a} />
+        <Path d="M12 4v3" delay={0.18} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+Home.propTypes = iconPropTypes;
+
+const About = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M12 12a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" delay={0} animate={a} />
+        <Path d="M6.5 20c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5" delay={0.1} animate={a} />
+        <Path d="M12 5v1.5" delay={0.16} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+About.propTypes = iconPropTypes;
+
+const Skills = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M12 3L3.5 7.5 12 12l8.5-4.5L12 3z" delay={0} animate={a} />
+        <Path d="M3.5 12.5L12 17l8.5-4.5" delay={0.08} animate={a} />
+        <Path d="M3.5 17.5L12 22l8.5-4.5" delay={0.16} animate={a} />
+        <Path d="M12 12v5" delay={0.22} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+Skills.propTypes = iconPropTypes;
+
+const Experience = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M8 7V5.5A2 2 0 0110 3.5h4A2 2 0 0116 5.5V7" delay={0} animate={a} />
+        <Path d="M4.5 7h15A1.5 1.5 0 0121 8.5v10A1.5 1.5 0 0119.5 20h-15A1.5 1.5 0 013 18.5v-10A1.5 1.5 0 014.5 7z" delay={0.08} animate={a} />
+        <Path d="M9 12h6" delay={0.16} animate={a} />
+        <Path d="M12 10.5v4.5" delay={0.2} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+Experience.propTypes = iconPropTypes;
+
+const Education = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M12 3L3 8.5 12 14l9-5.5L12 3z" delay={0} animate={a} />
+        <Path d="M6 11v4.5c0 1.8 2.7 3.5 6 3.5s6-1.7 6-3.5V11" delay={0.1} animate={a} />
+        <Path d="M20.5 9v5.5" delay={0.18} animate={a} />
+        <Path d="M20.5 14.5l1.5 1" delay={0.22} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+Education.propTypes = iconPropTypes;
+
+const Projects = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M3 7.5A1.5 1.5 0 014.5 6H9l2 2.5h8.5A1.5 1.5 0 0121 10v8.5A1.5 1.5 0 0119.5 20h-15A1.5 1.5 0 013 18.5V7.5z" delay={0} animate={a} />
+        <Path d="M9 6V4.5A1.5 1.5 0 0110.5 3h3A1.5 1.5 0 0115 4.5V6" delay={0.08} animate={a} />
+        <Path d="M8.5 14h7" delay={0.16} animate={a} />
+        <Path d="M8.5 17h4.5" delay={0.2} animate={a} />
+      </>
+    )}
+  </IconBase>
+);
+Projects.propTypes = iconPropTypes;
+
+const Contact = ({ className, animated = true }) => (
+  <IconBase className={className} animated={animated}>
+    {(a) => (
+      <>
+        <Path d="M4 7.5h16a1.5 1.5 0 011.5 1.5v7A1.5 1.5 0 0120 17.5H4A1.5 1.5 0 012.5 16V9A1.5 1.5 0 014 7.5z" delay={0} animate={a} />
+        <Path d="M4 8l8 5.5L20 8" delay={0.12} animate={a} />
+        <Path d="M12 13.5V20" delay={0.18} animate={a} strokeWidth={2} />
+      </>
+    )}
+  </IconBase>
+);
+Contact.propTypes = iconPropTypes;
+
+const SUN_RAYS = [0, 45, 90, 135, 180, 225, 270, 315];
+
+const DarkMode = ({ className, isDark = false, animated = true }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = animated && !prefersReducedMotion;
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" className="opacity-[0.12]" fill="currentColor" stroke="none" />
+
+      {SUN_RAYS.map((angle, i) => (
         <motion.line
-          key={i}
+          key={angle}
           x1="12"
-          y1="3"
+          y1="2"
           x2="12"
-          y2="5"
+          y2="4.5"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="1.75"
           strokeLinecap="round"
-          transform={`rotate(${i * 30} 12 12)`}
+          transform={`rotate(${angle} 12 12)`}
           initial={false}
-          animate={isDark ? {
-            scale: 0,
-            opacity: 0
-          } : {
-            scale: [1, 1.2, 1],
-            opacity: 1
+          animate={{
+            opacity: isDark ? 0 : 1,
+            scale: isDark ? 0.3 : 1,
           }}
-          transition={{
-            duration: 0.5,
-            delay: i * 0.04,
-            ease: "easeInOut"
-          }}
-          style={{ transformOrigin: "center" }}
+          transition={
+            shouldAnimate
+              ? { duration: 0.32, delay: i * 0.015, ease: EASE }
+              : { duration: 0 }
+          }
+          style={{ transformOrigin: '12px 12px' }}
         />
       ))}
 
-      {/* Moon Crater Effects */}
-      {isDark && (
-        <>
-          <motion.circle
-            cx="9"
-            cy="10"
-            r="1.5"
-            fill="currentColor"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.5, 0.3] }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          />
-          <motion.circle
-            cx="15"
-            cy="11"
-            r="1"
-            fill="currentColor"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.5, 0.3] }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          />
-          <motion.circle
-            cx="11"
-            cy="14"
-            r="1.2"
-            fill="currentColor"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.5, 0.3] }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          />
-        </>
-      )}
-
-      {/* Stars (visible in dark mode) */}
-      {isDark && (
-        <g>
-          {[...Array(5)].map((_, i) => (
-            <motion.path
-              key={i}
-              d={`M${18 + i * 1.5} ${6 + i * 1.2}L${18.5 + i * 1.5} ${5 + i * 1.2}L${19 + i * 1.5} ${6 + i * 1.2}L${18.5 + i * 1.5} ${7 + i * 1.2}Z`}
-              fill="currentColor"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: [0, 1, 0.5, 1],
-                scale: [0, 1, 0.8, 1],
-                transition: {
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  delay: i * 0.3
-                }
-              }}
-            />
-          ))}
-        </g>
-      )}
-
-      {/* Moon Shadow Effect */}
-      <motion.path
-        d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+      <motion.circle
+        cx="12"
+        cy="12"
+        r="4"
         stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
+        strokeWidth="1.75"
+        fill="currentColor"
+        fillOpacity={0.15}
         initial={false}
-        animate={isDark ? {
-          opacity: 1,
-          pathLength: 1,
-          transition: { duration: 0.7, ease: "easeInOut" }
-        } : {
-          opacity: 0,
-          pathLength: 0,
-          transition: { duration: 0.3 }
+        animate={{
+          opacity: isDark ? 0 : 1,
+          scale: isDark ? 0.5 : 1,
         }}
+        transition={{ duration: shouldAnimate ? 0.35 : 0, ease: EASE }}
+      />
+
+      <motion.path
+        d="M20.5 12.2a8.5 8.5 0 11-9.2-9.2 6.5 6.5 0 009.2 9.2z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="currentColor"
+        fillOpacity={0.12}
+        initial={false}
+        animate={{
+          opacity: isDark ? 1 : 0,
+          pathLength: isDark ? 1 : 0,
+          rotate: isDark ? 0 : -25,
+        }}
+        transition={{ duration: shouldAnimate ? 0.42 : 0, ease: EASE }}
+        style={{ transformOrigin: '12px 12px' }}
       />
     </svg>
-  ),
+  );
+};
+DarkMode.propTypes = {
+  ...iconPropTypes,
+  isDark: PropTypes.bool,
+};
+
+export const Icons = {
+  Home: React.memo(Home),
+  About: React.memo(About),
+  Skills: React.memo(Skills),
+  Experience: React.memo(Experience),
+  Education: React.memo(Education),
+  Projects: React.memo(Projects),
+  Contact: React.memo(Contact),
+  DarkMode: React.memo(DarkMode),
 };

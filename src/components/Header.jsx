@@ -1,1049 +1,631 @@
-// src/components/Header.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import useReducedMotion from '../hooks/useReducedMotion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faSun,
-  faMoon,
-  faBars,
-  faTimes,
-  faHome,
-  faUser,
-  faCode,
-  faBriefcase,
-  faGraduationCap,
-  faProjectDiagram,
-  faEnvelope,
-} from '@fortawesome/free-solid-svg-icons';
-
-// Animation variants
-const navItemHoverVariants = {
-  initial: {
-    backgroundColor: "rgba(0, 0, 0, 0)",
-    scale: 1,
-    y: 0,
-    boxShadow: "0 0 0 rgba(59, 130, 246, 0)",
-    border: "1px solid transparent"
-  },
-  hover: {
-    backgroundColor: "rgba(59, 130, 246, 0.12)",
-    scale: 1.05,
-    y: -3,
-    boxShadow: "0 4px 20px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.15)",
-    border: "1px solid rgba(59, 130, 246, 0.2)",
-    transition: {
-      duration: 0.3,
-      ease: [0.43, 0.13, 0.23, 0.96],
-      scale: {
-        type: "spring",
-        stiffness: 400,
-        damping: 15
-      },
-      boxShadow: {
-        duration: 0.4
-      }
-    }
-  },
-  tap: {
-    scale: 0.97,
-    y: 1,
-    boxShadow: "0 2px 8px rgba(59, 130, 246, 0.1)",
-    transition: {
-      duration: 0.1,
-      ease: "easeOut"
-    }
-  }
-};
-
-const toggleContainerVariants = {
-  light: {
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-    transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 20
-    }
-  },
-  dark: {
-    backgroundColor: "rgba(96, 165, 250, 0.1)",
-    transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 20
-    }
-  },
-  hover: {
-    scale: 1.05,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10
-    }
-  },
-  tap: {
-    scale: 0.95
-  }
-};
-
-const toggleIconVariants = {
-  light: {
-    rotate: 0,
-    scale: 1,
-    filter: "drop-shadow(0 0 8px rgba(234, 179, 8, 0.5))",
-    transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 10
-    }
-  },
-  dark: {
-    rotate: 360,
-    scale: 1,
-    filter: "drop-shadow(0 0 8px rgba(96, 165, 250, 0.5))",
-    transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 10
-    }
-  },
-  tap: {
-    scale: 0.9,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 10
-    }
-  }
-};
-
-const darkModeTextVariants = {
-  hidden: {
-    opacity: 0,
-    x: -10,
-    width: 0
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    width: 'auto',
-    transition: {
-      duration: 0.3,
-      ease: "easeOut"
-    }
-  },
-  exit: {
-    opacity: 0,
-    x: 10,
-    width: 0,
-    transition: {
-      duration: 0.2,
-      ease: "easeIn"
-    }
-  }
-};
-
+import { faBars, faTimes, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { Icons } from './Icons';
+import { navItems as navConfig, siteMeta } from './siteData';
+import { GlassBlooms, GlassDotGrid, GlassSpecular } from './GlassChrome';
+import GlassEdge from './GlassEdge';
+import { getSectionTheme } from './themeTokens';
 
-// Add hover animation variants for all icons
-const iconHoverVariants = {
-  initial: { scale: 1 },
-  hover: (i) => ({
-    scale: 1.1,
-    rotate: i % 2 === 0 ? 10 : -10,
-    transition: {
-      type: "spring",
-      stiffness: 300,
-      damping: 10
-    }
-  })
+const SCROLL_HIDE_THRESHOLD = 72;
+const PRIMARY_NAV_IDS = new Set(['hero', 'about', 'skills', 'experience', 'education', 'projects']);
+
+const navLinkMotion = {
+  whileHover: { y: -1 },
+  whileTap: { scale: 0.98 },
+  transition: { type: 'spring', stiffness: 420, damping: 28 },
 };
 
-// Add a new variant for the text inside nav items
-const navTextVariants = {
-  initial: {
-    letterSpacing: "0em",
-    y: 0
-  },
-  hover: {
-    letterSpacing: "0.02em",
-    y: 0,
-    transition: {
-      duration: 0.3,
-      ease: [0.43, 0.13, 0.23, 0.96]
-    }
+const ThemeToggle = React.memo(({
+  darkMode,
+  toggleDarkMode,
+  prefersReducedMotion,
+  showLabel = false,
+  className = '',
+  onAfterToggle,
+}) => (
+  <motion.button
+    type="button"
+    onClick={() => {
+      toggleDarkMode();
+      onAfterToggle?.();
+    }}
+    aria-pressed={darkMode}
+    aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+    className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 ${
+      darkMode ? 'liquid-glass-chip-dark text-blue-200' : 'liquid-glass-chip text-amber-600'
+    } ${className}`}
+    whileHover={prefersReducedMotion ? undefined : { y: -1 }}
+    whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
+  >
+    <Icons.DarkMode
+      isDark={darkMode}
+      animated={!prefersReducedMotion}
+      className="h-[18px] w-[18px]"
+    />
+    {showLabel && (
+      <span className="text-sm font-medium">
+        {darkMode ? 'Light mode' : 'Dark mode'}
+      </span>
+    )}
+  </motion.button>
+));
+
+ThemeToggle.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+  toggleDarkMode: PropTypes.func.isRequired,
+  prefersReducedMotion: PropTypes.bool.isRequired,
+  showLabel: PropTypes.bool,
+  className: PropTypes.string,
+  onAfterToggle: PropTypes.func,
+};
+
+const NavLink = React.memo(({
+  item,
+  mobile = false,
+  active,
+  darkMode,
+  onNavigate,
+  variant = 'default',
+}) => {
+  const isContact = item.id === 'contact';
+  const inactiveText = darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900';
+  const inactiveIcon = darkMode ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-700';
+  const activeIcon = darkMode ? 'text-blue-200' : 'text-blue-700';
+  const activeText = darkMode ? 'text-white' : 'text-slate-900';
+  const hoverBg = darkMode ? 'hover:bg-white/[0.06]' : 'hover:bg-slate-100/90';
+  const mobileAccent = darkMode ? 'bg-blue-400' : 'bg-blue-500';
+  const gradient = darkMode
+    ? 'from-blue-300 via-purple-300 to-pink-300'
+    : 'from-blue-600 via-purple-600 to-pink-600';
+
+  if (mobile) {
+    return (
+      <Link
+        to={item.href}
+        title={item.label}
+        aria-current={active ? 'page' : undefined}
+        onClick={onNavigate}
+        className={`group relative flex items-center gap-3 px-5 py-3.5 text-base font-medium touch-manipulation transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-inset ${
+          active
+            ? activeText
+            : `${inactiveText} ${hoverBg}`
+        } ${isContact && !active ? (darkMode ? 'bg-blue-500/[0.08]' : 'bg-blue-500/[0.05]') : ''}`}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+      >
+        {active && (
+          <span className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${mobileAccent}`} aria-hidden="true" />
+        )}
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+            active
+              ? 'liquid-glass-btn-primary text-white'
+              : darkMode
+                ? 'liquid-glass-icon-dark'
+                : 'liquid-glass-icon'
+          }`}
+        >
+          <item.Icon
+            animated={false}
+            className={`h-4 w-4 ${active ? 'text-white' : inactiveIcon}`}
+          />
+        </span>
+        <span className="min-w-0 flex-1">{item.label}</span>
+        {active ? (
+          <span className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+            darkMode ? 'text-blue-300/80' : 'text-blue-500/80'
+          }`}
+          >
+            Current
+          </span>
+        ) : isContact ? (
+          <FontAwesomeIcon icon={faArrowRight} className={`text-xs ${darkMode ? 'text-blue-300' : 'text-blue-500'}`} aria-hidden="true" />
+        ) : null}
+      </Link>
+    );
   }
-};
 
-const navIconVariants = {
-  initial: {
-    scale: 1,
-    rotate: 0
-  },
-  hover: {
-    scale: 1.1,
-    rotate: 5,
-    transition: {
-      type: "spring",
-      stiffness: 400,
-      damping: 15
-    }
-  },
-  tap: {
-    scale: 0.9,
-    rotate: -5
+  if (variant === 'cta') {
+    return (
+      <motion.li {...navLinkMotion} className="list-none">
+        <Link
+          to={item.href}
+          title={item.label}
+          aria-current={active ? 'page' : undefined}
+          onClick={onNavigate}
+          className={`group relative inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-glass)] px-4 py-2 text-sm font-semibold transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 ${
+            active ? 'liquid-glass-btn-primary text-white' : 'liquid-glass-btn-primary text-white'
+          }`}
+        >
+          <span className="liquid-glass-specular pointer-events-none absolute inset-0 rounded-[inherit]" aria-hidden="true" />
+          <item.Icon animated={false} className="relative z-10 h-4 w-4" aria-hidden="true" />
+          <span className="relative z-10">{item.label}</span>
+        </Link>
+      </motion.li>
+    );
   }
+
+  return (
+    <motion.li {...navLinkMotion} className="list-none">
+      <Link
+        to={item.href}
+        title={item.label}
+        aria-current={active ? 'page' : undefined}
+        onClick={onNavigate}
+        className={`group relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 ${
+          active ? activeText : `${inactiveText} ${hoverBg}`
+        }`}
+      >
+        {active && (
+          <motion.span
+            layoutId="nav-active-pill"
+            className={`absolute inset-0 rounded-xl liquid-glass-active ${
+              darkMode ? 'liquid-glass-nested-dark' : 'liquid-glass-nested'
+            }`}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            aria-hidden="true"
+          />
+        )}
+
+        <span className="relative z-10 flex items-center gap-2">
+          <item.Icon
+            animated={false}
+            className={`h-4 w-4 shrink-0 ${active ? activeIcon : inactiveIcon}`}
+          />
+          <span className="hidden lg:inline">{item.label}</span>
+        </span>
+
+        {active && (
+          <span
+            className={`relative z-10 hidden h-1.5 w-1.5 rounded-full bg-gradient-to-r lg:inline ${gradient}`}
+            aria-hidden="true"
+          />
+        )}
+      </Link>
+    </motion.li>
+  );
+});
+
+NavLink.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.string,
+    href: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    Icon: PropTypes.elementType.isRequired,
+  }).isRequired,
+  mobile: PropTypes.bool,
+  active: PropTypes.bool.isRequired,
+  darkMode: PropTypes.bool.isRequired,
+  onNavigate: PropTypes.func,
+  variant: PropTypes.oneOf(['default', 'cta']),
 };
 
-// Add styles for the gradient background
-const gradientStyle = {
-  background: "linear-gradient(120deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1))",
-  backgroundSize: "200% 100%",
-  backgroundPosition: "100% 0",
-  transition: "background-position 0.3s ease"
+const MobileMenuPortal = ({ children, isOpen }) => {
+  if (!isOpen || typeof document === 'undefined') return null;
+  return createPortal(children, document.body);
 };
 
-const hoverGradientStyle = {
-  backgroundPosition: "0 0"
+MobileMenuPortal.propTypes = {
+  children: PropTypes.node.isRequired,
+  isOpen: PropTypes.bool.isRequired,
 };
 
 const Header = ({ darkMode, toggleDarkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showDarkModeText, setShowDarkModeText] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [panelTop, setPanelTop] = useState(80);
   const location = useLocation();
-  const controls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
+  const { topEdge, inset, divider, muted, gradient } = getSectionTheme(darkMode);
+  const shellRef = useRef(null);
+  const mobilePanelRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const lastScrollY = useRef(0);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+  const navItems = useMemo(
+    () =>
+      navConfig.map((item) => ({
+        ...item,
+        Icon: Icons[item.icon],
+      })),
+    [],
+  );
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+  const primaryNavItems = useMemo(
+    () => navItems.filter((item) => PRIMARY_NAV_IDS.has(item.id)),
+    [navItems],
+  );
+
+  const contactItem = useMemo(
+    () => navItems.find((item) => item.id === 'contact'),
+    [navItems],
+  );
+
+  const activeItem = useMemo(
+    () => navItems.find((item) => {
+      if (item.href === '/') return location.pathname === '/';
+      return location.pathname.startsWith(item.href);
+    }),
+    [navItems, location.pathname],
+  );
+
+  const isActive = useCallback(
+    (path) => {
+      if (path === '/') return location.pathname === '/';
+      return location.pathname.startsWith(path);
+    },
+    [location.pathname],
+  );
+
+  const closeMenu = useCallback(() => setIsOpen(false), []);
+
+  const updatePanelPosition = useCallback(() => {
+    if (!shellRef.current) return;
+    const { bottom } = shellRef.current.getBoundingClientRect();
+    setPanelTop(bottom + 10);
   }, []);
 
-  // Update the navItems map to include custom hover effects
-  const navItems = [
-    {
-      href: '/',
-      id: 'hero',
-      label: 'Home',
-      Icon: Icons.Home,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? [1, 1.1, 1.05] : 1,
-        filter: isHovered ? "drop-shadow(0 0 8px currentColor)" : "none",
-        transition: { duration: 0.3 }
-      })
-    },
-    {
-      href: '/about',
-      id: 'about',
-      label: 'About',
-      Icon: Icons.About,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? 1.1 : 1,
-        rotate: isHovered ? 15 : 0,
-        transition: { type: "spring", stiffness: 300, damping: 10 }
-      })
-    },
-    {
-      href: '/skills',
-      id: 'skills',
-      label: 'Skills',
-      Icon: Icons.Skills,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? 1.1 : 1,
-        rotate: isHovered ? 360 : 0,
-        transition: { duration: 0.3 }
-      })
-    },
-    {
-      href: '/experience',
-      id: 'experience',
-      label: 'Experience',
-      Icon: Icons.Experience,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? 1.1 : 1,
-        x: isHovered ? [0, -5, 5, 0] : 0,
-        transition: { duration: 0.5 }
-      })
-    },
-    {
-      href: '/education',
-      id: 'education',
-      label: 'Education',
-      Icon: Icons.Education,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? 1.2 : 1,
-        y: [-2, 2, -2],
-        transition: {
-          y: {
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          },
-          scale: {
-            duration: 0.3
+  useEffect(() => {
+    setIsOpen(false);
+    setHeaderHidden(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let rafId = null;
+
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        const scrollTop = document.documentElement.scrollTop || window.scrollY;
+        const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = documentHeight > 0
+          ? Math.min(100, Math.max(0, (scrollTop / documentHeight) * 100))
+          : 0;
+        const delta = scrollTop - lastScrollY.current;
+
+        setScrolled(scrollTop > 12);
+        setScrollProgress(progress);
+
+        if (!isOpen) {
+          if (scrollTop < SCROLL_HIDE_THRESHOLD) {
+            setHeaderHidden(false);
+          } else if (delta > 10) {
+            setHeaderHidden(true);
+          } else if (delta < -10) {
+            setHeaderHidden(false);
           }
         }
-      })
-    },
-    {
-      href: '/projects',
-      id: 'projects',
-      label: 'Projects',
-      Icon: Icons.Projects,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? [1, 1.2, 0.9, 1.1] : 1,
-        transition: { duration: 0.4 }
-      })
-    },
-    {
-      href: '/contact',
-      id: 'contact',
-      label: 'Contact',
-      Icon: Icons.Contact,
-      hoverEffect: (isHovered) => ({
-        scale: isHovered ? 1.1 : 1,
-        rotate: isHovered ? [-10, 10, -10, 0] : 0,
-        transition: { duration: 0.5 }
-      })
-    },
-  ];
 
-  const isActive = (path) => {
-    if (path === '/' && location.pathname === '/') return true;
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
-    return false;
-  };
+        lastScrollY.current = scrollTop;
+        rafId = null;
+      });
+    };
 
-  const liquidVariants = {
-    initial: {
-      borderRadius: '40px',
-    },
-    animate: {
-      borderRadius: ['40px', '45px', '40px', '43px', '40px'],
-      transition: {
-        duration: 5,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [isOpen]);
 
-  const navVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.1,
-        when: "beforeChildren",
-      },
-    },
-  };
+  useEffect(() => {
+    updatePanelPosition();
+    window.addEventListener('resize', updatePanelPosition);
+    return () => window.removeEventListener('resize', updatePanelPosition);
+  }, [scrolled, isOpen, updatePanelPosition]);
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut",
-      },
-    },
-    hover: {
-      scale: 1.05,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
-    },
-    tap: {
-      scale: 0.95,
-    },
-  };
+  useEffect(() => {
+    if (!isOpen) return undefined;
 
-  const mobileTextVariants = {
-    enter: {
-      opacity: 0,
-      x: -20,
-      transition: {
-        duration: 0.2,
-        ease: "easeOut"
+    setHeaderHidden(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        menuButtonRef.current?.focus();
       }
-    },
-    center: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    },
-    exit: {
-      opacity: 0,
-      x: 20,
-      transition: {
-        duration: 0.2,
-        ease: "easeIn"
-      }
-    }
-  };
 
-  const iconVariants = {
-    light: {
-      rotate: 0,
-      scale: 1,
-      filter: "drop-shadow(0 0 3px rgba(59, 130, 246, 0.6))",
-      transition: {
-        duration: 0.7,
-        ease: [0.4, 0, 0.2, 1],
-        scale: {
-          duration: 0.3
+      if (e.key === 'Tab' && mobilePanelRef.current) {
+        const focusable = mobilePanelRef.current.querySelectorAll(
+          'a[href], button:not([disabled])',
+        );
+        const nodes = Array.from(focusable);
+        if (!nodes.length) return;
+
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
-    },
-    dark: {
-      rotate: 180,
-      scale: 0.9,
-      filter: "drop-shadow(0 0 3px rgba(250, 204, 21, 0.6))",
-      transition: {
-        duration: 0.7,
-        ease: [0.4, 0, 0.2, 1],
-        scale: {
-          duration: 0.3
-        }
-      }
-    },
-    clicked: {
-      scale: [1, 0.7, 1.3, 0.9],
-      rotate: [0, 180, 360, 180],
-      transition: {
-        duration: 0.5,
-        times: [0, 0.3, 0.6, 1],
-        ease: [0.4, 0, 0.2, 1]
-      }
-    }
-  };
+    };
 
-  const sunburstVariants = {
-    light: {
-      scale: [1, 1.2, 1],
-      opacity: [0.5, 0.7, 0.5],
-      rotate: [0, 180, 360],
-      transition: {
-        duration: 8,
-        repeat: Infinity,
-        ease: "linear"
-      }
-    },
-    dark: {
-      scale: 0,
-      opacity: 0,
-      transition: {
-        duration: 0.7,
-        ease: [0.4, 0, 0.2, 1]
-      }
-    },
-    clicked: {
-      scale: [1, 1.5, 0],
-      opacity: [0.7, 0.3, 0],
-      rotate: [0, 90, 180],
-      transition: {
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    const focusTimer = window.setTimeout(() => {
+      mobilePanelRef.current?.querySelector('a[href]')?.focus();
+    }, 60);
 
-  const rayVariants = {
-    light: {
-      scale: [1, 1.1, 1],
-      opacity: [0.3, 0.5, 0.3],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    },
-    dark: {
-      scale: 0,
-      opacity: 0,
-      transition: {
-        duration: 0.5
-      }
-    },
-    clicked: {
-      scale: [1, 1.3, 0],
-      opacity: [0.5, 0.2, 0],
-      transition: {
-        duration: 0.4
-      }
-    }
-  };
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      window.clearTimeout(focusTimer);
+    };
+  }, [isOpen]);
 
-  const starVariants = {
-    light: {
-      scale: 0,
-      opacity: 0,
-      transition: {
-        duration: 0.5
-      }
-    },
-    dark: {
-      scale: 1,
-      opacity: [0.5, 1, 0.5],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    },
-    clicked: {
-      scale: [0, 1.5, 0],
-      opacity: [0, 1, 0],
-      transition: {
-        duration: 0.5,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  const morphCircleVariants = {
-    light: {
-      scale: 0,
-      opacity: 0
-    },
-    dark: {
-      scale: 0,
-      opacity: 0
-    },
-    clicked: {
-      scale: [0, 4, 0],
-      opacity: [0, 0.5, 0],
-      transition: {
-        duration: 0.6,
-        ease: "easeInOut"
-      }
-    }
-  };
+  const shellClass = scrolled
+    ? darkMode
+      ? 'shadow-[0_14px_44px_rgba(0,0,0,0.42)]'
+      : 'shadow-[0_14px_40px_rgba(15,23,42,0.14)]'
+    : '';
 
   return (
     <motion.header
-      className={`fixed w-full top-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4'
-        }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
+      className={`fixed top-0 z-50 w-full transition-[padding] duration-300 ${scrolled ? 'py-1.5' : 'py-3'}`}
+      initial={prefersReducedMotion ? false : { y: -100 }}
+      animate={{ y: headerHidden && !isOpen ? '-120%' : 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.32, ease: [0.4, 0, 0.2, 1] }}
     >
-      {/* Enhanced Liquid Glass Background */}
-      <motion.div
-        className={`absolute inset-0 backdrop-blur-lg ${darkMode
-          ? 'bg-gray-900/80 border-gray-700/50'
-          : 'bg-white/80 border-gray-200/50'
-          }`}
-        variants={liquidVariants}
-        initial="initial"
-        animate="animate"
-        style={{
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: darkMode
-            ? '0 4px 30px rgba(0, 0, 0, 0.3)'
-            : '0 4px 30px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        {/* Enhanced Liquid Blobs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className={`absolute w-64 h-64 rounded-full blur-3xl opacity-30 mix-blend-multiply ${darkMode ? 'bg-gradient-to-r from-blue-600 to-cyan-600' : 'bg-gradient-to-r from-blue-300 to-cyan-300'
-              }`}
-            animate={{
-              x: [0, 100, 0],
-              y: [0, 50, 0],
-              scale: [1, 1.2, 1],
-              rotate: [0, 90, 0],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            style={{ left: '10%', top: '-150%' }}
-          />
-          <motion.div
-            className={`absolute w-64 h-64 rounded-full blur-3xl opacity-30 mix-blend-multiply ${darkMode ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-purple-300 to-pink-300'
-              }`}
-            animate={{
-              x: [0, -100, 0],
-              y: [0, -50, 0],
-              scale: [1, 1.2, 1],
-              rotate: [0, -90, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            style={{ right: '10%', top: '-150%' }}
-          />
-        </div>
-      </motion.div>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
 
-      <nav className="container mx-auto px-4 relative">
-        <div className="flex items-center justify-between">
-          {/* Enhanced Logo */}
-          <motion.div
-            className="text-2xl font-bold"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Link
-              to="/"
-              className="relative group"
-            >
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 relative z-10">
-                Portfolio
-              </span>
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg -z-10"
-                initial={{ scale: 0, opacity: 0 }}
-                whileHover={{ scale: 1.2, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            </Link>
-          </motion.div>
+      <div className="page-wrap page-wrap--wide relative mx-auto w-full max-w-7xl px-3 md:px-5">
+        <div
+          ref={shellRef}
+          className={`relative overflow-hidden rounded-[var(--radius-glass-lg)] transition-shadow duration-300 ${
+            darkMode ? 'liquid-glass-hero-panel-dark' : 'liquid-glass-hero-panel'
+          } ${shellClass}`}
+        >
+          <div className="liquid-glass-specular pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
+          <GlassDotGrid darkMode={darkMode} className="z-[1]" />
+          <GlassSpecular darkMode={darkMode} className="z-[1]" />
+          <GlassBlooms darkMode={darkMode} animate={!prefersReducedMotion && !scrolled} className="z-[1]" />
+          <GlassEdge darkMode={darkMode} inset="inset-x-4" style={{ background: topEdge }} />
+          <GlassEdge darkMode={darkMode} position="bottom" inset="inset-x-4" style={{ background: topEdge }} />
 
-          {/* Enhanced Desktop Navigation */}
           <motion.div
-            className="hidden md:flex items-center space-x-6"
-            variants={navVariants}
-            initial="hidden"
-            animate="visible"
+            className="absolute inset-x-0 top-0 z-20 h-0.5 origin-left rounded-full"
+            initial={false}
+            animate={{ scaleX: scrollProgress / 100 }}
+            style={{
+              background: darkMode
+                ? 'linear-gradient(90deg, rgba(59,130,246,0.95), rgba(168,85,247,0.95))'
+                : 'linear-gradient(90deg, rgba(59,130,246,0.95), rgba(109,40,217,0.95))',
+              boxShadow: '0 0 10px rgba(59,130,246,0.2)',
+            }}
+            aria-hidden="true"
+          />
+
+          <nav
+            role="navigation"
+            aria-label="Main navigation"
+            className="relative z-10 px-3 md:px-4"
           >
-            {navItems.map((item, index) => (
-              <motion.div
-                key={item.href}
-                variants={navItemHoverVariants}
-                initial="initial"
-                whileHover="hover"
-                whileTap="tap"
-                onHoverStart={() => setHoveredItem(item.id)}
-                onHoverEnd={() => setHoveredItem(null)}
-                className="relative rounded-xl overflow-hidden"
+            <div className={`flex items-center justify-between gap-3 ${scrolled ? 'py-2' : 'py-2.5 md:py-3'}`}>
+              <Link
+                to="/"
+                className="group relative inline-flex min-w-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 rounded-xl"
+                aria-label={`${siteMeta.name} home`}
               >
-                <Link
-                  to={item.href}
-                  className={`text-base font-medium transition-all duration-300 relative group flex items-center gap-2 px-4 py-2.5 rounded-xl
-                    ${isActive(item.href)
-                      ? darkMode
-                        ? 'text-blue-300 bg-blue-500/10'
-                        : 'text-blue-600 bg-blue-50'
-                      : darkMode
-                        ? 'text-gray-300 hover:text-white'
-                        : 'text-gray-600 hover:text-gray-900'
+                <span className="relative shrink-0 rounded-[14px] p-[1.5px] bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-md transition-transform group-hover:scale-105">
+                  <span
+                    className={`flex h-10 w-10 items-center justify-center rounded-[12px] text-sm font-bold ${
+                      darkMode ? 'liquid-glass-icon-dark text-blue-200' : 'liquid-glass-icon text-blue-600'
                     }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <motion.div
-                    custom={index}
-                    className="relative"
-                    animate={item.hoverEffect(hoveredItem === item.id)}
                   >
-                    <item.Icon
-                      className={`w-[18px] h-[18px] ${isActive(item.href)
-                        ? darkMode
-                          ? 'text-blue-300'
-                          : 'text-blue-500'
-                        : darkMode
-                          ? 'text-gray-400'
-                          : 'text-gray-500'
-                        }`}
-                    />
-                    {/* Enhanced icon glow effect */}
-                    <motion.div
-                      className={`absolute inset-0 blur-md rounded-full ${darkMode ? 'bg-blue-400/30' : 'bg-blue-500/30'
-                        }`}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={isActive(item.href) || hoveredItem === item.id ? {
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.6, 0.3]
-                      } : { scale: 0, opacity: 0 }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                  </motion.div>
-                  {item.label}
-                  {/* Enhanced hover background effect */}
-                  <motion.div
-                    className={`absolute inset-0 rounded-xl ${darkMode
-                      ? 'bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0'
-                      : 'bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0'
-                      }`}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileHover={{
-                      opacity: 1,
-                      scale: 1,
-                      transition: {
-                        duration: 0.2
-                      }
-                    }}
-                  />
-                  {/* Active indicator with enhanced animation */}
-                  {isActive(item.href) && (
-                    <motion.div
-                      className="absolute inset-0 rounded-xl overflow-hidden"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                    >
-                      <motion.div
-                        className={`absolute bottom-0 left-0 right-0 h-0.5 ${darkMode ? 'bg-blue-400/50' : 'bg-blue-500/50'
-                          }`}
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 30
-                        }}
+                    {siteMeta.name.charAt(0)}
+                  </span>
+                </span>
+                <span className="hidden min-w-0 flex-col leading-tight min-[420px]:flex">
+                  <span className={`truncate bg-gradient-to-r bg-clip-text text-base font-bold text-transparent sm:text-lg ${gradient}`}>
+                    {siteMeta.name}
+                  </span>
+                  <span className={`truncate text-[11px] font-medium ${muted}`}>
+                    {siteMeta.title}
+                  </span>
+                </span>
+              </Link>
+
+              <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 lg:flex xl:gap-3">
+                <div className={`flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-[var(--radius-glass-lg)] p-1 scrollbar-none ${inset}`}>
+                  <ul className="flex items-center gap-0.5">
+                    {primaryNavItems.map((item) => (
+                      <NavLink
+                        key={item.href}
+                        item={item}
+                        active={isActive(item.href)}
+                        darkMode={darkMode}
+                        onNavigate={closeMenu}
                       />
-                      <motion.div
-                        className={`absolute bottom-0 left-0 right-0 h-0.5 ${darkMode ? 'bg-blue-300' : 'bg-blue-400'
-                          }`}
-                        initial={{ x: '-100%' }}
-                        animate={{ x: '100%' }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    </motion.div>
-                  )}
-                </Link>
-              </motion.div>
-            ))}
+                    ))}
+                  </ul>
+                </div>
 
-            {/* Enhanced Dark Mode Toggle */}
-            <motion.div
-              className="relative flex items-center"
-              onMouseEnter={() => setShowDarkModeText(true)}
-              onMouseLeave={() => setShowDarkModeText(false)}
-            >
-              <motion.button
-                onClick={toggleDarkMode}
-                variants={toggleContainerVariants}
-                initial={darkMode ? "dark" : "light"}
-                animate={darkMode ? "dark" : "light"}
-                whileHover="hover"
-                whileTap="tap"
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl`}
-              >
-                <motion.div
-                  className="relative"
-                  variants={toggleIconVariants}
-                  initial={darkMode ? "dark" : "light"}
-                  animate={darkMode ? "dark" : "light"}
-                  whileTap="tap"
-                >
-                  <motion.div
-                    className="relative z-10"
-                    initial={false}
-                    animate={darkMode ? {
-                      rotate: [0, 45, 90, 180, 270, 360],
-                      scale: [1, 0.8, 1.2, 0.9, 1.1, 1]
-                    } : {
-                      rotate: [360, 315, 270, 180, 90, 0],
-                      scale: [1, 1.2, 0.9, 1.1, 0.8, 1]
-                    }}
-                    transition={{
-                      duration: 0.6,
-                      ease: "easeInOut",
-                      times: [0, 0.2, 0.4, 0.6, 0.8, 1]
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={darkMode ? faMoon : faSun}
-                      className={`text-lg ${darkMode
-                        ? 'text-blue-300'
-                        : 'text-yellow-500'
-                        }`}
+                {contactItem && (
+                  <ul className="list-none">
+                    <NavLink
+                      item={contactItem}
+                      active={isActive(contactItem.href)}
+                      darkMode={darkMode}
+                      onNavigate={closeMenu}
+                      variant="cta"
                     />
-                  </motion.div>
-                  {/* Enhanced glow effect */}
-                  <motion.div
-                    className={`absolute inset-0 rounded-full blur-lg ${darkMode
-                      ? 'bg-blue-400/30'
-                      : 'bg-yellow-400/30'
-                      }`}
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.3, 0.6, 0.3]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  {/* Particle effects */}
-                  {darkMode ? (
-                    <motion.div
-                      className="absolute inset-[-100%]"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      {[...Array(6)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute w-1 h-1 bg-blue-300 rounded-full"
-                          style={{
-                            top: `${Math.random() * 100}%`,
-                            left: `${Math.random() * 100}%`
-                          }}
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.3, 0.7, 0.3],
-                            y: [0, -10, 0]
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: i * 0.2,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      className="absolute inset-[-50%]"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      {[...Array(8)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute bg-yellow-400/30 h-px"
-                          style={{
-                            width: '100%',
-                            transformOrigin: 'center',
-                            rotate: `${i * 45}deg`
-                          }}
-                          animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.7, 0.3]
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            delay: i * 0.1,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-                  )}
-                </motion.div>
-                <AnimatePresence mode="wait">
-                  {showDarkModeText && (
-                    <motion.span
-                      variants={darkModeTextVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className={`text-sm font-medium ${darkMode ? 'text-blue-300' : 'text-yellow-600'
-                        }`}
-                    >
-                      {darkMode ? 'Light' : 'Dark'}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </motion.div>
-          </motion.div>
+                  </ul>
+                )}
 
-          {/* Mobile Menu Button - Enhanced touch target and feedback */}
-          <motion.button
-            className="md:hidden p-3 rounded-xl -mr-2 touch-manipulation"
-            onClick={() => setIsOpen(!isOpen)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label={isOpen ? "Close menu" : "Open menu"}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FontAwesomeIcon
-              icon={isOpen ? faTimes : faBars}
-              className={`text-2xl ${darkMode ? 'text-white' : 'text-gray-900'}`}
-            />
-          </motion.button>
-        </div>
+                <ThemeToggle
+                  darkMode={darkMode}
+                  toggleDarkMode={toggleDarkMode}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
+              </div>
 
-        {/* Enhanced Mobile Navigation - Improved performance and touch interactions */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{
-                duration: 0.2,
-                ease: "easeInOut"
-              }}
-              className={`md:hidden mt-4 rounded-xl overflow-hidden shadow-lg ${darkMode ? 'bg-gray-800' : 'bg-white'
-                }`}
-              style={{
-                willChange: 'opacity, height',
-                touchAction: 'pan-y pinch-zoom'
-              }}
-            >
-              {navItems.map((item) => (
-                <motion.div
-                  key={item.href}
-                  variants={itemVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <Link
-                    to={item.href}
-                    aria-current={isActive(item.href) ? 'page' : undefined}
-                    className={`flex items-center gap-3 px-6 py-4 transition-all duration-200 touch-manipulation
-                      ${isActive(item.href)
-                        ? darkMode
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-blue-50 text-blue-600'
-                        : darkMode
-                          ? 'text-gray-300 active:bg-gray-700/50'
-                          : 'text-gray-700 active:bg-gray-50'
-                      }`}
-                    onClick={() => setIsOpen(false)}
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <item.Icon
-                      className={`w-5 h-5 ${isActive(item.href)
-                        ? 'text-blue-500'
-                        : darkMode
-                          ? 'text-gray-400'
-                          : 'text-gray-500'
-                        }`}
-                    />
-                    <motion.span
-                      variants={navTextVariants}
-                      className="font-medium"
-                    >
-                      {item.label}
-                    </motion.span>
-                  </Link>
-                </motion.div>
-              ))}
-
-              {/* Mobile Dark Mode Toggle - Simplified but enhanced */}
-              <motion.div
-                variants={itemVariants}
-                whileHover="hover"
-                whileTap="tap"
-                className="border-t border-gray-200 dark:border-gray-700 md:hidden"
-              >
+              <div className="flex shrink-0 items-center gap-2 lg:hidden">
+                {activeItem && (
+                  <span className={`hidden max-w-[8rem] truncate text-xs font-medium sm:inline sm:max-w-[10rem] ${muted}`}>
+                    {activeItem.label}
+                  </span>
+                )}
+                <ThemeToggle
+                  darkMode={darkMode}
+                  toggleDarkMode={toggleDarkMode}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
                 <motion.button
-                  onClick={() => {
-                    toggleDarkMode();
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-6 py-4 transition-all duration-200 touch-manipulation
-                    ${darkMode
-                      ? 'text-yellow-400 active:bg-gray-700/50'
-                      : 'text-blue-600 active:bg-gray-50'
-                    }`}
+                  ref={menuButtonRef}
+                  type="button"
+                  className={`rounded-xl p-2.5 touch-manipulation ${
+                    darkMode ? 'liquid-glass-chip-dark text-white' : 'liquid-glass-chip text-slate-900'
+                  } ${isOpen ? (darkMode ? 'text-blue-200 ring-1 ring-blue-400/40' : 'text-blue-600 ring-1 ring-blue-500/30') : ''}`}
+                  onClick={() => setIsOpen((open) => !open)}
+                  aria-expanded={isOpen}
+                  aria-controls="mobile-nav-panel"
+                  aria-label={isOpen ? 'Close menu' : 'Open menu'}
+                  whileTap={{ scale: 0.96 }}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className="relative">
-                    <motion.div
-                      variants={iconVariants}
-                      animate={darkMode ? "dark" : "light"}
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={isOpen ? 'close' : 'open'}
+                      initial={prefersReducedMotion ? false : { opacity: 0, rotate: -90, scale: 0.8 }}
+                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                      exit={prefersReducedMotion ? undefined : { opacity: 0, rotate: 90, scale: 0.8 }}
+                      transition={{ duration: 0.18 }}
+                      className="block"
                     >
-                      <FontAwesomeIcon
-                        icon={darkMode ? faMoon : faSun}
-                        className={`text-xl ${darkMode
-                          ? 'text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.7)]'
-                          : 'text-blue-600 drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]'
-                          }`}
-                      />
-                    </motion.div>
-
-                    {/* Sunburst Effect */}
-                    <motion.div
-                      className="absolute inset-0 z-10"
-                      variants={sunburstVariants}
-                      animate={darkMode ? "dark" : "light"}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-yellow-200 via-orange-300 to-yellow-200 rounded-full blur-[2px]" />
-                    </motion.div>
-
-                    {/* Sun Rays */}
-                    <motion.div
-                      className="absolute inset-[-50%] z-0"
-                      variants={rayVariants}
-                      animate={darkMode ? "dark" : "light"}
-                    >
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute inset-0 bg-gradient-to-r from-yellow-200/30 to-orange-300/30"
-                          style={{
-                            transform: `rotate(${i * 45}deg)`,
-                            clipPath: 'polygon(50% 50%, 45% -20%, 55% -20%)'
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-
-                    {/* Stars Effect for Dark Mode */}
-                    <motion.div
-                      className="absolute inset-[-100%] z-0"
-                      variants={starVariants}
-                      animate={darkMode ? "dark" : "light"}
-                    >
-                      {[...Array(6)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute bg-yellow-200 rounded-full w-1 h-1"
-                          style={{
-                            top: `${Math.random() * 100}%`,
-                            left: `${Math.random() * 100}%`,
-                            opacity: Math.random() * 0.7 + 0.3
-                          }}
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.3, 0.7, 0.3]
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: Math.random() * 2,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-                  </div>
-                  <span className="text-base font-medium">
-                    {darkMode ? 'Light Mode' : 'Dark Mode'}
-                  </span>
+                      <FontAwesomeIcon icon={isOpen ? faTimes : faBars} className="h-5 w-5" />
+                    </motion.span>
+                  </AnimatePresence>
                 </motion.button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <MobileMenuPortal isOpen={isOpen}>
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              <motion.button
+                type="button"
+                className="fixed inset-0 z-[60] bg-slate-950/50 backdrop-blur-[6px] lg:hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={closeMenu}
+                aria-label="Close menu"
+              />
+
+              <motion.div
+                ref={mobilePanelRef}
+                id="mobile-nav-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Mobile navigation"
+                initial={prefersReducedMotion ? false : { opacity: 0, y: -14, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={prefersReducedMotion ? undefined : { opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
+                className={`fixed left-3 right-3 z-[70] mx-auto max-w-lg overflow-hidden rounded-[var(--radius-glass-lg)] lg:hidden ${
+                  darkMode ? 'liquid-glass-hero-panel-dark' : 'liquid-glass-hero-panel'
+                }`}
+                style={{
+                  top: panelTop,
+                  maxHeight: `calc(100dvh - ${panelTop}px - 1rem)`,
+                }}
+              >
+                <div className="liquid-glass-specular pointer-events-none absolute inset-0 z-[1]" aria-hidden="true" />
+                <GlassDotGrid darkMode={darkMode} className="z-[1]" />
+                <GlassSpecular darkMode={darkMode} className="z-[1]" />
+                <GlassEdge darkMode={darkMode} inset="inset-x-4" style={{ background: topEdge }} />
+                <GlassEdge darkMode={darkMode} position="bottom" inset="inset-x-4" style={{ background: topEdge }} />
+
+                <div className={`relative z-10 flex items-center justify-between border-b px-5 py-4 ${divider}`}>
+                  <div>
+                    <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>
+                      Menu
+                    </p>
+                    {activeItem && (
+                      <p className={`mt-0.5 text-sm font-semibold bg-gradient-to-r bg-clip-text text-transparent ${gradient}`}>
+                        {activeItem.label}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeMenu}
+                    className={`rounded-xl p-2 ${darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'}`}
+                    aria-label="Close menu"
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <ul className={`relative z-10 max-h-[min(52dvh,420px)] overflow-y-auto overscroll-contain ${
+                  darkMode ? 'divide-y divide-white/8' : 'divide-y divide-slate-200'
+                }`}
+                >
+                  {navItems.map((item, index) => (
+                    <motion.li
+                      key={item.href}
+                      className="list-none"
+                      initial={prefersReducedMotion ? false : { opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03, duration: 0.2 }}
+                    >
+                      <NavLink
+                        item={item}
+                        mobile
+                        active={isActive(item.href)}
+                        darkMode={darkMode}
+                        onNavigate={closeMenu}
+                      />
+                    </motion.li>
+                  ))}
+                </ul>
+
+                <div className={`relative z-10 space-y-3 border-t px-5 py-4 ${divider}`}>
+                  {contactItem && (
+                    <Link
+                      to={contactItem.href}
+                      onClick={closeMenu}
+                      className="liquid-glass-btn-primary group flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                      {contactItem.label}
+                      <FontAwesomeIcon icon={faArrowRight} className="text-xs transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    </Link>
+                  )}
+                  <ThemeToggle
+                    darkMode={darkMode}
+                    toggleDarkMode={toggleDarkMode}
+                    prefersReducedMotion={prefersReducedMotion}
+                    showLabel
+                    className="w-full justify-center"
+                    onAfterToggle={closeMenu}
+                  />
+                </div>
               </motion.div>
-            </motion.div>
+            </>
           )}
         </AnimatePresence>
-      </nav>
+      </MobileMenuPortal>
     </motion.header>
   );
 };

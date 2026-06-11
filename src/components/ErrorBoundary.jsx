@@ -1,74 +1,112 @@
-// src/components/ErrorBoundary.jsx
-
-import React, { Component, createRef } from 'react';
+import React, { Component, createRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRedo, faHome, faChevronDown, faChevronUp, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import {
+  faRedo,
+  faHome,
+  faChevronDown,
+  faChevronUp,
+  faTriangleExclamation,
+  faCopy,
+  faCheck,
+} from '@fortawesome/free-solid-svg-icons';
+import useReducedMotion from '../hooks/useReducedMotion';
+import GlassPanel from './GlassPanel';
+import SectionBackground from './SectionBackground';
+import { siteMeta } from './siteData';
+import { getSectionTheme, getBluePanelWash } from './themeTokens';
 
-/**
- * **ErrorDetails Component**
- * A custom expandable panel to display error details with enhanced UI/UX.
- */
-class ErrorDetails extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { isOpen: false };
-  }
+const isDev = import.meta.env.DEV;
 
-  toggleDetails = () => {
-    this.setState((prev) => ({ isOpen: !prev.isOpen }));
+const ErrorDetails = ({ error, errorInfo, darkMode }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+
+  const errorText = `${error?.toString() ?? 'Unknown error'}\n\n${errorInfo?.componentStack ?? ''}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(errorText);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
-  render() {
-    const { error, errorInfo, darkMode } = this.props;
-    const { isOpen } = this.state;
+  return (
+    <div className="w-full mt-8 text-left">
+      <motion.button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors ${
+          darkMode
+            ? 'liquid-glass-btn-secondary-dark text-red-200'
+            : 'liquid-glass-btn-secondary text-red-700'
+        }`}
+        aria-expanded={isOpen}
+        aria-controls="error-details-content"
+        whileHover={prefersReducedMotion ? undefined : { y: -1 }}
+        whileTap={prefersReducedMotion ? undefined : { scale: 0.99 }}
+      >
+        <span>{isOpen ? 'Hide technical details' : 'View technical details'}</span>
+        <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} className="text-xs" />
+      </motion.button>
 
-    return (
-      <div className="w-full max-w-2xl mt-6">
-        <motion.button
-          onClick={this.toggleDetails}
-          className={`flex items-center justify-between w-full px-4 py-3 bg-opacity-50 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            darkMode
-              ? 'bg-red-700 text-red-200 hover:bg-red-600 focus:ring-red-500'
-              : 'bg-red-200 text-red-700 hover:bg-red-300 focus:ring-red-500'
-          }`}
-          aria-expanded={isOpen}
-          aria-controls="error-details-content"
-          initial={false}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <span className="font-medium">View Error Details</span>
-          <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} />
-        </motion.button>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              id="error-details-content"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.5, ease: 'easeInOut' }}
-              className={`mt-2 p-4 rounded-md overflow-hidden ${
-                darkMode ? 'bg-gray-800 text-red-300' : 'bg-red-100 text-red-700'
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            id="error-details-content"
+            role="region"
+            aria-label="Error details"
+            initial={prefersReducedMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={prefersReducedMotion ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div
+              className={`mt-3 rounded-2xl p-4 ${
+                darkMode ? 'liquid-glass-dark' : 'liquid-glass'
               }`}
             >
-              <details open>
-                <summary className="cursor-pointer font-semibold underline mb-2">
-                  Error Details
-                </summary>
-                <p className="whitespace-pre-wrap">{error.toString()}</p>
-                <br />
-                <p className="whitespace-pre-wrap">{errorInfo.componentStack}</p>
-              </details>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-}
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${
+                  darkMode ? 'text-red-300' : 'text-red-600'
+                }`}
+                >
+                  Stack trace
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
+                    darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
+                  }`}
+                >
+                  <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <pre
+                className={`max-h-56 overflow-auto rounded-xl p-4 text-xs leading-relaxed ${
+                  darkMode
+                    ? 'bg-slate-950/60 text-red-200'
+                    : 'bg-red-50/80 text-red-800'
+                }`}
+              >
+                {errorText}
+              </pre>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 ErrorDetails.propTypes = {
   error: PropTypes.object.isRequired,
@@ -76,102 +114,168 @@ ErrorDetails.propTypes = {
   darkMode: PropTypes.bool.isRequired,
 };
 
-/**
- * **FallbackUI Component**
- * The UI displayed when an error is caught by the ErrorBoundary with enhanced UI/UX.
- */
 const FallbackUI = React.forwardRef(
   (
     {
       darkMode,
+      handleRetry,
       handleReload,
-      handleGoHome,
       error,
       errorInfo,
     },
-    ref
+    ref,
   ) => {
+    const prefersReducedMotion = useReducedMotion();
+    const { panel, topEdge, sectionBg } = getSectionTheme(darkMode);
+    const panelWash = getBluePanelWash(darkMode);
+
     return (
-      <div
+      <section
         ref={ref}
         tabIndex={-1}
-        className={`min-h-screen flex items-center justify-center p-4 ${
-          darkMode ? 'bg-gray-900' : 'bg-gray-50'
-        }`}
+        role="alert"
+        aria-live="assertive"
+        aria-labelledby="error-boundary-heading"
+        className={`section-shell relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-16 ${sectionBg}`}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className={`max-w-2xl w-full p-8 rounded-3xl shadow-2xl text-center ${
-            darkMode
-              ? 'bg-gradient-to-br from-gray-800 to-gray-900 text-white'
-              : 'bg-gradient-to-br from-red-50 to-white text-gray-900'
-          }`}
+        <SectionBackground darkMode={darkMode} />
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
         >
+          <div
+            className={`absolute left-[12%] top-[18%] h-56 w-56 rounded-full blur-3xl ${
+              darkMode ? 'bg-blue-500/10' : 'bg-blue-400/15'
+            }`}
+          />
+          <div
+            className={`absolute bottom-[16%] right-[10%] h-64 w-64 rounded-full blur-3xl ${
+              darkMode ? 'bg-purple-500/10' : 'bg-purple-400/12'
+            }`}
+          />
+        </div>
+
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          className="relative w-full max-w-2xl"
+        >
+          <GlassPanel
+            darkMode={darkMode}
+            prefersReducedMotion={prefersReducedMotion}
+            panelClass={panel}
+            topEdge={topEdge}
+            wash={panelWash}
+            className="p-8 text-center md:p-12"
+          >
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="mb-6"
+            initial={prefersReducedMotion ? false : { scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.08, type: 'spring', stiffness: 220, damping: 18 }}
+            className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center ${
+              darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'
+            }`}
           >
             <FontAwesomeIcon
-              icon={faExclamationTriangle}
-              className="text-6xl text-red-500 animate-pulse"
+              icon={faTriangleExclamation}
+              className={`text-4xl ${darkMode ? 'text-amber-300' : 'text-amber-500'}`}
             />
           </motion.div>
 
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-red-400 to-red-600">
-            Oops! Something went wrong.
-          </h2>
-
-          <p className={`text-lg sm:text-xl mb-8 font-medium ${
-            darkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            Sorry, an unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
+          <p
+            className={`mb-3 text-xs font-semibold uppercase tracking-[0.22em] ${
+              darkMode ? 'text-slate-400' : 'text-slate-500'
+            }`}
+          >
+            Unexpected error
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+          <h1
+            id="error-boundary-heading"
+            className={`mb-4 text-3xl font-extrabold sm:text-4xl bg-clip-text text-transparent bg-gradient-to-r ${
+              darkMode
+                ? 'from-blue-300 via-purple-300 to-pink-300'
+                : 'from-blue-600 via-purple-600 to-pink-600'
+            }`}
+          >
+            Something went wrong
+          </h1>
+
+          <p className={`mx-auto mb-8 max-w-xl text-base sm:text-lg ${
+            darkMode ? 'text-slate-300' : 'text-slate-600'
+          }`}
+          >
+            This page hit a snag while loading. Try again first — if the issue persists, refresh the page or return home.
+          </p>
+
+          <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
             <motion.button
-              onClick={handleReload}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Reload page"
+              type="button"
+              onClick={handleRetry}
+              className="liquid-glass-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold"
+              whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
             >
               <FontAwesomeIcon icon={faRedo} />
-              <span>Reload Page</span>
+              Try again
             </motion.button>
 
             <motion.button
-              onClick={handleGoHome}
-              className={`flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
+              type="button"
+              onClick={handleReload}
+              className={`inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold ${
                 darkMode
-                  ? 'bg-gray-700 text-white hover:bg-gray-600 focus:ring-gray-500'
-                  : 'bg-white text-gray-900 hover:bg-gray-100 border border-gray-200 focus:ring-gray-500'
+                  ? 'liquid-glass-btn-secondary-dark text-white'
+                  : 'liquid-glass-btn-secondary text-slate-900'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Go to home page"
+              whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+              whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+            >
+              <FontAwesomeIcon icon={faRedo} />
+              Reload page
+            </motion.button>
+
+            <Link
+              to="/"
+              className={`inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold ${
+                darkMode
+                  ? 'liquid-glass-btn-secondary-dark text-white'
+                  : 'liquid-glass-btn-secondary text-slate-900'
+              }`}
             >
               <FontAwesomeIcon icon={faHome} />
-              <span>Go Home</span>
-            </motion.button>
+              Go home
+            </Link>
           </div>
 
-          {error && errorInfo && (
+          <p className={`mt-6 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            Need help? Reach out through the{' '}
+            <Link
+              to="/contact"
+              className={`font-medium underline-offset-4 hover:underline ${
+                darkMode ? 'text-blue-300' : 'text-blue-600'
+              }`}
+            >
+              contact page
+            </Link>
+            {' '}on {siteMeta.name}&apos;s portfolio.
+          </p>
+
+          {isDev && error && errorInfo && (
             <ErrorDetails error={error} errorInfo={errorInfo} darkMode={darkMode} />
           )}
+          </GlassPanel>
         </motion.div>
-      </div>
+      </section>
     );
-  }
+  },
 );
 
 FallbackUI.propTypes = {
   darkMode: PropTypes.bool.isRequired,
+  handleRetry: PropTypes.func.isRequired,
   handleReload: PropTypes.func.isRequired,
-  handleGoHome: PropTypes.func.isRequired,
   error: PropTypes.object,
   errorInfo: PropTypes.object,
 };
@@ -183,20 +287,13 @@ FallbackUI.defaultProps = {
 
 FallbackUI.displayName = 'FallbackUI';
 
-/**
- * **ErrorBoundary Component**
- * Catches errors in its child components and displays a fallback UI.
- * Now without external dependencies like Sentry, react-toastify, or i18next.
- */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    const storedTheme = typeof window !== 'undefined' && localStorage.getItem('darkMode') === 'true';
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-      darkMode: storedTheme,
     };
     this.errorRef = createRef();
   }
@@ -207,14 +304,10 @@ class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
+
+    if (isDev) {
       console.error('Error caught by ErrorBoundary:', error, errorInfo);
     }
-
-    // You can add your own error reporting service here
-    // For example: logErrorToService(error, errorInfo);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -223,18 +316,21 @@ class ErrorBoundary extends Component {
     }
   }
 
+  handleRetry = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
+  };
+
   handleReload = () => {
     window.location.reload();
   };
 
-  handleGoHome = () => {
-    const { homePath } = this.props;
-    window.location.href = homePath;
-  };
-
   render() {
-    const { hasError, darkMode, error, errorInfo } = this.state;
-    const { customFallback, customFallbackProps } = this.props;
+    const { hasError, error, errorInfo } = this.state;
+    const { children, customFallback, customFallbackProps, darkMode = false } = this.props;
 
     if (hasError) {
       if (customFallback) {
@@ -245,29 +341,29 @@ class ErrorBoundary extends Component {
         <FallbackUI
           ref={this.errorRef}
           darkMode={darkMode}
+          handleRetry={this.handleRetry}
           handleReload={this.handleReload}
-          handleGoHome={this.handleGoHome}
           error={error}
           errorInfo={errorInfo}
         />
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 
 ErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
+  darkMode: PropTypes.bool,
   customFallback: PropTypes.element,
   customFallbackProps: PropTypes.object,
-  homePath: PropTypes.string,
 };
 
 ErrorBoundary.defaultProps = {
+  darkMode: false,
   customFallback: null,
   customFallbackProps: {},
-  homePath: '/',
 };
 
 export default ErrorBoundary;

@@ -1,9 +1,9 @@
-// ImageCarousel.jsx
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import useReducedMotion from '../hooks/useReducedMotion';
 
 const variants = {
   enter: (direction) => ({
@@ -25,10 +25,11 @@ const transition = {
   opacity: { duration: 0.2 },
 };
 
-const ImageCarousel = ({ images }) => {
+const ImageCarousel = ({ images, darkMode = false }) => {
   const [[current, direction], setCurrent] = useState([0, 0]);
   const imageCount = images.length;
   const carouselRef = useRef(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const paginate = useCallback(
     (newDirection) => {
@@ -37,66 +38,95 @@ const ImageCarousel = ({ images }) => {
         newDirection,
       ]);
     },
-    [imageCount]
+    [imageCount],
   );
 
-  // Keyboard navigation
   useEffect(() => {
     const node = carouselRef.current;
     if (!node) return;
 
     const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') {
-        paginate(-1);
-      } else if (e.key === 'ArrowRight') {
-        paginate(1);
-      }
+      if (e.key === 'ArrowLeft') paginate(-1);
+      else if (e.key === 'ArrowRight') paginate(1);
     };
 
     node.addEventListener('keydown', handleKeyDown);
-    return () => {
-      node.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => node.removeEventListener('keydown', handleKeyDown);
   }, [paginate]);
+
+  const navBtnClass = darkMode
+    ? 'liquid-glass-chip-dark text-slate-200 hover:text-white'
+    : 'liquid-glass-chip text-slate-700 hover:text-slate-900';
 
   return (
     <div
       ref={carouselRef}
-      className="relative"
+      className={`relative overflow-hidden rounded-[var(--radius-glass-lg)] ${
+        darkMode ? 'liquid-glass-dark' : 'liquid-glass'
+      }`}
       tabIndex="0"
       role="region"
-      aria-label="Image Carousel"
+      aria-label="Image carousel"
+      aria-roledescription="carousel"
     >
-      <AnimatePresence initial={false} custom={direction}>
+      <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.img
           key={current}
           src={images[current]}
           alt={`Screenshot ${current + 1} of ${images.length}`}
-          className="w-full h-60 sm:h-80 object-cover rounded-lg shadow-md"
+          className="h-60 w-full object-cover sm:h-80"
           loading="lazy"
           custom={direction}
-          variants={variants}
-          initial="enter"
+          variants={prefersReducedMotion ? undefined : variants}
+          initial={prefersReducedMotion ? false : 'enter'}
           animate="center"
-          exit="exit"
-          transition={transition}
+          exit={prefersReducedMotion ? undefined : 'exit'}
+          transition={prefersReducedMotion ? undefined : transition}
         />
       </AnimatePresence>
-      {/* Navigation Buttons */}
-      <button
-        onClick={() => paginate(-1)}
-        className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white"
-        aria-label="Previous image"
-      >
-        <FontAwesomeIcon icon={faChevronLeft} />
-      </button>
-      <button
-        onClick={() => paginate(1)}
-        className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white"
-        aria-label="Next image"
-      >
-        <FontAwesomeIcon icon={faChevronRight} />
-      </button>
+
+      {imageCount > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => paginate(-1)}
+            className={`absolute left-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${navBtnClass}`}
+            aria-label="Previous image"
+          >
+            <FontAwesomeIcon icon={faChevronLeft} className="text-sm" />
+          </button>
+          <button
+            type="button"
+            onClick={() => paginate(1)}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${navBtnClass}`}
+            aria-label="Next image"
+          >
+            <FontAwesomeIcon icon={faChevronRight} className="text-sm" />
+          </button>
+
+          <div
+            className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5"
+            role="tablist"
+            aria-label="Carousel slides"
+          >
+            {images.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                role="tab"
+                aria-selected={index === current}
+                aria-label={`Go to slide ${index + 1}`}
+                onClick={() => setCurrent([index, index > current ? 1 : -1])}
+                className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  index === current
+                    ? `w-6 ${darkMode ? 'bg-blue-400' : 'bg-blue-600'}`
+                    : `w-1.5 ${darkMode ? 'bg-white/30' : 'bg-slate-900/25'}`
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -104,10 +134,6 @@ const ImageCarousel = ({ images }) => {
 ImageCarousel.propTypes = {
   images: PropTypes.arrayOf(PropTypes.string).isRequired,
   darkMode: PropTypes.bool,
-};
-
-ImageCarousel.defaultProps = {
-  darkMode: false,
 };
 
 export default React.memo(ImageCarousel);

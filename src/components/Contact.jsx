@@ -1,11 +1,61 @@
-// Contact.jsx
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import Card3D from './Card3D';
-import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope, FaMapMarkerAlt, FaPhone, FaPaperPlane, FaCheckCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGithub, faLinkedin } from '@fortawesome/free-brands-svg-icons';
+import {
+  faEnvelope,
+  faMapMarkerAlt,
+  faPhone,
+  faPaperPlane,
+  faCheckCircle,
+  faClock,
+  faArrowRight,
+  faComments,
+  faCheck,
+  faFolderOpen,
+  faUser,
+  faTag,
+  faHandshake,
+  faBolt,
+} from '@fortawesome/free-solid-svg-icons';
+import SectionBackground from './SectionBackground';
+import SectionHeading from './SectionHeading';
+import GlassPanel from './GlassPanel';
+import GlassCell from './GlassCell';
+import { getSectionTheme, getBluePanelWash } from './themeTokens';
+import useReducedMotion from '../hooks/useReducedMotion';
+import { contactInfo, siteMeta, socialLinks } from './siteData';
+
+const MotionLink = motion.create(Link);
+const MESSAGE_MIN = 10;
+const MESSAGE_MAX = 1000;
+
+const SUBJECT_PRESETS = [
+  'Project inquiry',
+  'Collaboration',
+  'Job opportunity',
+  'Just saying hi',
+];
+
+const STAT_ICONS = [faComments, faClock, faHandshake];
+const FORM_FIELDS = ['name', 'email', 'subject', 'message'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: 'easeOut' } },
+};
 
 const Contact = ({ darkMode }) => {
+  const navigate = useNavigate();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,524 +63,601 @@ const Contact = ({ darkMode }) => {
     message: '',
   });
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
 
-  const validateEmail = useCallback((email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const emailItem = contactInfo.find((i) => i.label === 'Email');
+  const phoneItem = contactInfo.find((i) => i.label === 'Phone');
+  const locationItem = contactInfo.find((i) => i.label === 'Location');
+
+  const validateField = useCallback((name, value) => {
+    const trimmed = value.trim();
+    switch (name) {
+      case 'name':
+        return !trimmed ? 'Name is required' : '';
+      case 'email': {
+        if (!trimmed) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return 'Please enter a valid email';
+        return '';
+      }
+      case 'subject':
+        return !trimmed ? 'Subject is required' : '';
+      case 'message':
+        if (!trimmed) return 'Message is required';
+        if (trimmed.length < MESSAGE_MIN) return `Message must be at least ${MESSAGE_MIN} characters`;
+        if (trimmed.length > MESSAGE_MAX) return `Message must be under ${MESSAGE_MAX} characters`;
+        return '';
+      default:
+        return '';
+    }
   }, []);
 
   const validateForm = useCallback(() => {
-    const newErrors = {};
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
-    }
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
-    }
-    return newErrors;
-  }, [formData, validateEmail]);
+    const fields = ['name', 'email', 'subject', 'message'];
+    return fields.reduce((acc, field) => {
+      const err = validateField(field, formData[field]);
+      if (err) acc[field] = err;
+      return acc;
+    }, {});
+  }, [formData, validateField]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (touched[name]) {
+      setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
     }
-  }, [errors]);
+  }, [touched, validateField]);
+
+  const handleBlur = useCallback((e) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+  }, [validateField]);
+
+  const handleSubjectPreset = useCallback((preset) => {
+    setFormData((prev) => ({ ...prev, subject: preset }));
+    setTouched((prev) => ({ ...prev, subject: true }));
+    setErrors((prev) => ({ ...prev, subject: validateField('subject', preset) }));
+  }, [validateField]);
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-
-    // Validate form
     const newErrors = validateForm();
+    setTouched({ name: true, email: true, subject: true, message: true });
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstInvalid = FORM_FIELDS.find((field) => newErrors[field]);
+      if (firstInvalid) {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(firstInvalid);
+          el?.focus({ preventScroll: true });
+          el?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+        });
+      }
       return;
     }
 
     setIsSubmitting(true);
     setErrors({});
+    setSubmitStatus(null);
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
+      await new Promise((resolve) => setTimeout(resolve, 1800));
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
-
-      // Reset status after 3 seconds
-      setTimeout(() => setSubmitStatus(null), 3000);
-    } catch (error) {
+      setTouched({});
+      navigate('/thank-you');
+    } catch {
       setSubmitStatus('error');
-      setTimeout(() => setSubmitStatus(null), 3000);
+      setTimeout(() => setSubmitStatus(null), 4000);
     } finally {
       setIsSubmitting(false);
     }
-  }, [validateForm]);
+  }, [validateForm, navigate, prefersReducedMotion]);
 
-  const socialLinks = [
-    {
-      name: 'GitHub',
-      icon: <FaGithub className="text-2xl" />,
-      url: 'https://github.com/Nikitadevs',
-      color: darkMode ? 'hover:text-gray-300' : 'hover:text-gray-700',
-    },
-    {
-      name: 'LinkedIn',
-      icon: <FaLinkedin className="text-2xl" />,
-      url: 'https://www.linkedin.com/in/nikita-veretenko-b502b928a',
-      color: 'hover:text-blue-500',
-    },
-  ];
+  const quickActions = useMemo(() => [
+    ...(emailItem?.link ? [{
+      label: 'Email Me',
+      href: emailItem.link,
+      icon: faEnvelope,
+      primary: true,
+    }] : []),
+    ...(phoneItem?.link ? [{
+      label: 'Call Me',
+      href: phoneItem.link,
+      icon: faPhone,
+      primary: false,
+    }] : []),
+  ], [emailItem, phoneItem]);
 
-  const contactInfo = [
-    {
-      icon: <FaEnvelope className="text-2xl" />,
-      label: 'Email',
-      value: 'nikita@example.com',
-      link: 'mailto:nikita@example.com',
-    },
-    {
-      icon: <FaMapMarkerAlt className="text-2xl" />,
-      label: 'Location',
-      value: 'United States',
-    },
-    {
-      icon: <FaPhone className="text-2xl" />,
-      label: 'Phone',
-      value: '(123) 456-7890',
-      link: 'tel:+11234567890',
-    },
-  ];
+  const contactDetails = [
+    { ...emailItem, icon: faEnvelope },
+    { ...locationItem, icon: faMapMarkerAlt },
+    { ...phoneItem, icon: faPhone },
+  ].filter((item) => item?.label);
+
+  const isFieldValid = useCallback((field) => (
+    touched[field] && !validateField(field, formData[field])
+  ), [touched, formData, validateField]);
+
+  const messageProgress = Math.min((formData.message.trim().length / MESSAGE_MIN) * 100, 100);
+  const messageReady = formData.message.trim().length >= MESSAGE_MIN;
+
+  const completedFields = FORM_FIELDS.filter(
+    (field) => formData[field].trim() && !validateField(field, formData[field]),
+  ).length;
+  const formProgress = (completedFields / FORM_FIELDS.length) * 100;
+
+  const summaryStats = useMemo(() => [
+    { label: 'Channels', value: contactDetails.length, icon: STAT_ICONS[0] },
+    { label: 'Response', value: '<24h', icon: STAT_ICONS[1] },
+    { label: 'Availability', value: 'Open', icon: STAT_ICONS[2] },
+  ], [contactDetails.length]);
+
+  const {
+    muted, body, heading, accent, gradient, panel, inset, topEdge, divider, cellBg, cellHover, sectionBg, footerWash, nested,
+  } = getSectionTheme(darkMode);
+  const panelWash = getBluePanelWash(darkMode);
+
+  const inputClass = (field) => {
+    const hasError = errors[field] && touched[field];
+    const isValid = isFieldValid(field);
+    const hasIcon = field !== 'message';
+    return `w-full rounded-xl py-3 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 ${
+      hasIcon ? 'pl-11 pr-10' : 'px-4'
+    } ${
+      darkMode ? 'liquid-glass-input-dark text-white placeholder-slate-500' : 'liquid-glass-input text-slate-900 placeholder-slate-400'
+    } ${hasError ? 'ring-2 ring-red-500/80' : ''} ${isValid ? 'ring-1 ring-emerald-500/40' : ''}`;
+  };
+
+  const fieldIcons = {
+    name: faUser,
+    email: faEnvelope,
+    subject: faTag,
+  };
 
   return (
-    <section id="contact" className={`relative py-20 overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-b from-gray-50 to-white text-gray-900'}`}>
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className={`absolute top-20 -right-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-blue-500/10' : 'bg-blue-200/30'
-            }`}
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 50, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className={`absolute bottom-40 -left-20 w-96 h-96 rounded-full blur-3xl ${darkMode ? 'bg-purple-500/10' : 'bg-purple-200/30'
-            }`}
-          animate={{
-            scale: [1, 1.3, 1],
-            x: [0, -50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
-      <motion.div
-        className="container mx-auto px-4 relative z-10"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <div className="max-w-6xl mx-auto">
+    <section
+      id="contact"
+      className={`section-shell relative w-full overflow-hidden py-20 md:py-28 ${sectionBg}`}
+    >
+      <SectionBackground darkMode={darkMode} />
+      <div className="page-wrap relative z-10 mx-auto w-full max-w-6xl px-4 md:px-6">
+          <SectionHeading
+            badge="Let's Connect"
+            title="Get In Touch"
+            subtitle="Whether it's a project, collaboration, or just a hello — I'd love to hear from you"
+            darkMode={darkMode}
+            align="left"
+            badgeIcon={<FontAwesomeIcon icon={faComments} className="h-4 w-4" aria-hidden="true" />}
+          />
+
           <motion.div
-            className="text-center mb-12 md:mb-20"
-            initial={{ opacity: 0, y: -20 }}
+            className="relative w-full"
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
-            {/* Section Badge */}
-            <motion.div
-              className="inline-block mb-6"
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm ${darkMode
-                ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
-                : 'bg-blue-100 text-blue-700 border border-blue-200'
-                }`}>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-                Let's Connect
-              </span>
-            </motion.div>
-
-            {/* Enhanced Heading */}
-            <motion.h2
-              className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <span className={`bg-gradient-to-r bg-clip-text text-transparent ${darkMode
-                ? 'from-blue-400 via-purple-400 to-pink-400'
-                : 'from-blue-600 via-purple-600 to-pink-600'
-                }`}>
-                Get In Touch
-              </span>
-            </motion.h2>
-
-            {/* Animated Underline */}
-            <motion.div
-              className={`h-1.5 w-24 mx-auto rounded-full mb-8 bg-gradient-to-r shadow-lg ${darkMode
-                ? 'from-blue-400 via-purple-400 to-pink-400 shadow-blue-500/50'
-                : 'from-blue-600 via-purple-600 to-pink-600 shadow-purple-500/50'
-                }`}
-              initial={{ width: 0 }}
-              whileInView={{ width: 96 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            />
-
-            {/* Enhanced Description */}
-            <motion.p
-              className={`text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'
-                }`}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-            >
-              Have a question or want to <span className={`font-bold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>work together</span>? Let's connect!
-            </motion.p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-            >
-              <Card3D darkMode={darkMode}>
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium mb-2">Name</label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        aria-required="true"
-                        aria-invalid={!!errors.name}
-                        aria-describedby={errors.name ? "name-error" : undefined}
-                        className={`w-full px-4 py-3 rounded-xl outline-none transition-colors
-                          ${darkMode
-                            ? 'bg-gray-800 text-white focus:bg-gray-700'
-                            : 'bg-white text-gray-900 focus:bg-gray-50 border border-gray-200'}
-                          ${errors.name ? 'border-2 border-red-500' : ''}`}
-                      />
-                      {errors.name && (
-                        <p id="name-error" className="text-red-500 text-sm mt-1" role="alert">{errors.name}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        aria-required="true"
-                        aria-invalid={!!errors.email}
-                        aria-describedby={errors.email ? "email-error" : undefined}
-                        className={`w-full px-4 py-3 rounded-xl outline-none transition-colors
-                          ${darkMode
-                            ? 'bg-gray-800 text-white focus:bg-gray-700'
-                            : 'bg-white text-gray-900 focus:bg-gray-50 border border-gray-200'}
-                          ${errors.email ? 'border-2 border-red-500' : ''}`}
-                      />
-                      {errors.email && (
-                        <p id="email-error" className="text-red-500 text-sm mt-1" role="alert">{errors.email}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="subject" className="block text-sm font-medium mb-2">Subject</label>
-                      <input
-                        type="text"
-                        id="subject"
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleChange}
-                        required
-                        aria-required="true"
-                        aria-invalid={!!errors.subject}
-                        aria-describedby={errors.subject ? "subject-error" : undefined}
-                        className={`w-full px-4 py-3 rounded-xl outline-none transition-colors
-                          ${darkMode
-                            ? 'bg-gray-800 text-white focus:bg-gray-700'
-                            : 'bg-white text-gray-900 focus:bg-gray-50 border border-gray-200'}
-                          ${errors.subject ? 'border-2 border-red-500' : ''}`}
-                      />
-                      {errors.subject && (
-                        <p id="subject-error" className="text-red-500 text-sm mt-1" role="alert">{errors.subject}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium mb-2">Message</label>
-                      <textarea
-                        id="message"
-                        name="message"
-                        value={formData.message}
-                        onChange={handleChange}
-                        required
-                        rows={5}
-                        aria-required="true"
-                        aria-invalid={!!errors.message}
-                        aria-describedby={errors.message ? "message-error" : undefined}
-                        className={`w-full px-4 py-3 rounded-xl outline-none transition-colors resize-none
-                          ${darkMode
-                            ? 'bg-gray-800 text-white focus:bg-gray-700'
-                            : 'bg-white text-gray-900 focus:bg-gray-50 border border-gray-200'}
-                          ${errors.message ? 'border-2 border-red-500' : ''}`}
-                      />
-                      {errors.message && (
-                        <p id="message-error" className="text-red-500 text-sm mt-1" role="alert">{errors.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full px-8 py-4 rounded-2xl font-semibold relative overflow-hidden group backdrop-blur-xl
-                      ${darkMode
-                        ? 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/20'
-                        : 'bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white border border-white/30'} shadow-2xl`}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* Liquid shimmer effect */}
+          <GlassPanel
+            darkMode={darkMode}
+            prefersReducedMotion={prefersReducedMotion}
+            panelClass={panel}
+            topEdge={topEdge}
+            wash={panelWash}
+          >
+            <div className={`border-b px-6 py-6 md:px-10 md:py-8 ${divider}`}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className={`h-px w-10 bg-gradient-to-r ${gradient}`} aria-hidden="true" />
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>Overview</p>
+              </div>
+              <div className={`overflow-hidden ${nested}`}>
+                <div className={`grid grid-cols-3 divide-x divide-y sm:divide-y-0 ${divider}`}>
+                  {summaryStats.map((stat, index) => (
                     <motion.div
-                      className="absolute inset-0"
-                      style={{
-                        background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)`,
-                      }}
-                      animate={{
-                        transform: isSubmitting
-                          ? ['translateX(-100%)', 'translateX(100%)']
-                          : 'translateX(-100%)',
-                      }}
-                      transition={{
-                        duration: 1,
-                        repeat: isSubmitting ? Infinity : 0,
-                        ease: "easeInOut"
-                      }}
-                    />
-
-                    {/* Pulsing glow when submitting */}
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-400 blur-xl"
-                      animate={{
-                        opacity: isSubmitting ? [0, 0.6, 0] : 0,
-                        scale: isSubmitting ? [1, 1.2, 1] : 1,
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: isSubmitting ? Infinity : 0,
-                      }}
-                    />
-
-                    <span className="relative inline-flex items-center justify-center gap-2">
-                      {isSubmitting ? (
-                        <>
-                          <motion.span
-                            animate={{
-                              x: [0, 3, 0],
-                              y: [-1, 1, -1],
-                            }}
-                            transition={{
-                              duration: 0.8,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          >
-                            <FaPaperPlane className="text-lg" />
-                          </motion.span>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <motion.span
-                            whileHover={{
-                              x: 3,
-                            }}
-                            transition={{ duration: 0.3, ease: [0.43, 0.13, 0.23, 0.96] }}
-                          >
-                            <FaPaperPlane className="text-lg" />
-                          </motion.span>
-                          Send Message
-                        </>
-                      )}
-                    </span>
-                  </motion.button>
-
-                  {submitStatus === 'success' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-green-500 text-center mt-4 flex items-center justify-center gap-2"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        <FaCheckCircle className="text-lg" />
-                      </motion.span>
-                      Message sent successfully!
-                    </motion.div>
-                  )}
-                  {submitStatus === 'error' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-red-500 text-center mt-4"
-                      role="alert"
-                      aria-live="assertive"
-                    >
-                      Failed to send message. Please try again.
-                    </motion.div>
-                  )}
-                </form>
-              </Card3D>
-            </motion.div>
-
-            {/* Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8"
-            >
-              {/* Contact Details */}
-              <Card3D darkMode={darkMode}>
-                <div className="p-6 space-y-6">
-                  {contactInfo.map((info, index) => (
-                    <motion.div
-                      key={info.label}
-                      initial={{ opacity: 0, y: 20 }}
+                      key={stat.label}
+                      className={`group relative px-3 py-4 text-center transition-colors md:px-5 md:py-5 ${cellHover}`}
+                      initial={{ opacity: 0, y: 8 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="flex items-center gap-4"
+                      transition={{ delay: index * 0.05, duration: 0.35 }}
                     >
-                      <div className={`p-3 rounded-xl
-                        ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                        {info.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium opacity-60">{info.label}</p>
-                        {info.link ? (
-                          <a
-                            href={info.link}
-                            className="text-lg font-medium hover:underline"
-                          >
-                            {info.value}
-                          </a>
-                        ) : (
-                          <p className="text-lg font-medium">{info.value}</p>
-                        )}
-                      </div>
+                      <span
+                        className={`mx-auto mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl ${
+                          darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'
+                        }`}
+                      >
+                        <FontAwesomeIcon icon={stat.icon} className={`text-xs ${accent}`} aria-hidden="true" />
+                      </span>
+                      <p
+                        className={`text-xl font-bold tabular-nums md:text-2xl ${
+                          stat.label === 'Availability'
+                            ? `bg-gradient-to-r bg-clip-text text-transparent ${gradient}`
+                            : heading
+                        }`}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className={`mt-1 text-[10px] font-medium md:text-xs ${muted}`}>{stat.label}</p>
+                      <div
+                        className={`pointer-events-none absolute inset-x-4 bottom-0 h-0.5 scale-x-0 bg-gradient-to-r transition-transform duration-300 group-hover:scale-x-100 ${gradient}`}
+                        aria-hidden="true"
+                      />
                     </motion.div>
                   ))}
                 </div>
-              </Card3D>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'}`}>
+                  <FontAwesomeIcon icon={faBolt} className={`text-[10px] ${accent}`} aria-hidden="true" />
+                  Freelance & full-time
+                </span>
+                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'}`}>
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className={`text-[10px] ${accent}`} aria-hidden="true" />
+                  {locationItem?.value || 'Remote friendly'}
+                </span>
+              </div>
+            </div>
 
-              {/* Social Links */}
-              <Card3D darkMode={darkMode}>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-4">Connect With Me</h3>
-                  <div className="flex gap-4">
-                    {socialLinks.map((social, index) => (
+            <div className="grid lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+              <motion.aside
+                className={`order-2 flex flex-col gap-3 p-6 md:p-8 lg:order-1 lg:border-r lg:p-10 ${divider}`}
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                <GlassCell as={motion.div} variants={itemVariants} darkMode={darkMode} accent={`bg-gradient-to-b ${gradient}`} className="p-5 md:p-6">
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className={`h-px w-8 bg-gradient-to-r ${gradient}`} aria-hidden="true" />
+                    <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>Direct</p>
+                  </div>
+                  <h3 className={`mb-2 text-lg font-bold ${heading}`}>Contact channels</h3>
+                  <p className={`mb-5 text-sm ${body}`}>
+                    Reach out directly — I typically reply within a day.
+                  </p>
+
+                  <div className="space-y-2">
+                    {contactDetails.map((info) => (
+                      <GlassCell
+                        key={info.label}
+                        as={info.link ? 'a' : 'div'}
+                        darkMode={darkMode}
+                        accent={`bg-gradient-to-b ${gradient}`}
+                        href={info.link || undefined}
+                        className={`flex items-start gap-3 rounded-xl px-3 py-3 transition-colors ${
+                          info.link ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500' : ''
+                        } ${cellHover}`}
+                      >
+                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${darkMode ? 'liquid-glass-icon-dark' : 'liquid-glass-icon'}`}>
+                            <FontAwesomeIcon icon={info.icon} className={`text-sm ${accent}`} aria-hidden="true" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-[10px] font-semibold uppercase tracking-wider ${muted}`}>{info.label}</p>
+                            <p className={`text-sm font-semibold break-all ${info.link ? `${accent} group-hover:underline` : heading}`}>
+                              {info.value}
+                            </p>
+                          </div>
+                          {info.link && (
+                            <FontAwesomeIcon
+                              icon={faArrowRight}
+                              className={`mt-2 shrink-0 text-[10px] opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 ${muted}`}
+                              aria-hidden="true"
+                            />
+                          )}
+                      </GlassCell>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-2">
+                    {quickActions.map((action) => (
+                      <motion.a
+                        key={action.label}
+                        href={action.href}
+                        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                          action.primary
+                            ? 'liquid-glass-btn-primary'
+                            : darkMode
+                              ? 'liquid-glass-btn-secondary-dark text-white'
+                              : 'liquid-glass-btn-secondary text-slate-900'
+                        }`}
+                        whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <FontAwesomeIcon icon={action.icon} className="text-sm" aria-hidden="true" />
+                        {action.label}
+                      </motion.a>
+                    ))}
+                  </div>
+                </GlassCell>
+
+                <GlassCell as={motion.div} variants={itemVariants} darkMode={darkMode} accent={`bg-gradient-to-b ${gradient}`} className="p-5 md:p-6">
+                  <h3 className={`mb-4 text-lg font-bold ${heading}`}>Connect online</h3>
+                  <div className="mb-4 flex gap-2">
+                    {socialLinks.map((social) => (
                       <motion.a
                         key={social.name}
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`p-4 rounded-xl transition-colors backdrop-blur-xl relative overflow-hidden shadow-md ${darkMode
-                          ? 'bg-gray-800/50 border border-white/10'
-                          : 'bg-gray-100/50 border border-gray-200/50'
-                          } ${social.color}`}
-                        whileHover={{
-                          scale: 1.1,
-                          y: -3,
-                          boxShadow: darkMode
-                            ? '0 12px 24px rgba(59, 130, 246, 0.3)'
-                            : '0 12px 24px rgba(59, 130, 246, 0.2)',
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: index * 0.1, ease: [0.43, 0.13, 0.23, 0.96] }}
+                        aria-label={`Visit my ${social.name} profile (opens in a new tab)`}
+                        className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                          darkMode ? 'liquid-glass-icon-dark text-slate-200' : 'liquid-glass-icon text-slate-700'
+                        }`}
+                        whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                        whileTap={{ scale: 0.97 }}
                       >
-                        {/* Ripple effect on hover */}
-                        <motion.div
-                          className={`absolute inset-0 rounded-xl ${darkMode ? 'bg-blue-500/20' : 'bg-blue-500/10'
-                            }`}
-                          initial={{ scale: 0, opacity: 1 }}
-                          whileHover={{ scale: 2, opacity: 0 }}
-                          transition={{ duration: 0.6 }}
-                        />
-                        <span className="relative z-10">{social.icon}</span>
+                        <FontAwesomeIcon icon={social.name === 'GitHub' ? faGithub : faLinkedin} aria-hidden="true" />
+                        <span className="hidden sm:inline">{social.name}</span>
                       </motion.a>
                     ))}
                   </div>
-                </div>
-              </Card3D>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
+                  <p className={`text-sm leading-relaxed ${body}`}>
+                    Based in {locationItem?.value || 'the US'}, collaborating with teams worldwide on
+                    accessible, high-performance products.
+                  </p>
+                </GlassCell>
+
+                <GlassCell as={motion.div} variants={itemVariants} darkMode={darkMode} accent={`bg-gradient-to-b ${gradient}`} className="p-5 md:p-6">
+                  <p className={`text-sm ${body}`}>
+                    Want to see the work first?{' '}
+                    <MotionLink
+                      to="/projects"
+                      className={`inline-flex items-center gap-1 font-semibold hover:underline ${accent}`}
+                      whileHover={prefersReducedMotion ? undefined : { x: 2 }}
+                    >
+                      Browse projects
+                      <FontAwesomeIcon icon={faArrowRight} className="text-[10px]" aria-hidden="true" />
+                    </MotionLink>
+                  </p>
+                </GlassCell>
+              </motion.aside>
+
+              <motion.div
+                className="order-1 p-6 md:p-10 lg:order-2"
+                initial={{ opacity: 0, x: 16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45 }}
+              >
+                <form onSubmit={handleSubmit} noValidate className={`p-5 md:p-8 ${nested}`}>
+                  <div className="mb-6">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className={`h-px w-10 bg-gradient-to-r ${gradient}`} aria-hidden="true" />
+                        <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${muted}`}>Message</p>
+                      </div>
+                      <span className={`text-xs font-medium tabular-nums ${formProgress === 100 ? 'text-emerald-500' : muted}`} aria-live="polite">
+                        {completedFields}/{FORM_FIELDS.length} complete
+                      </span>
+                    </div>
+                    <div
+                      className={`mb-4 h-1 overflow-hidden rounded-full ${darkMode ? 'liquid-glass-progress-dark' : 'liquid-glass-progress'}`}
+                      aria-hidden="true"
+                    >
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          formProgress === 100 ? 'bg-emerald-500' : `bg-gradient-to-r ${gradient}`
+                        }`}
+                        style={{ width: `${formProgress}%` }}
+                      />
+                    </div>
+                    <h3 className={`text-xl font-bold md:text-2xl ${heading}`}>Send a message</h3>
+                    <p className={`mt-2 text-sm ${body}`}>
+                      Fill out the form and I'll get back to you at {emailItem?.value || 'your email'}.
+                    </p>
+                  </div>
+
+                  <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {['name', 'email'].map((field) => (
+                      <div key={field}>
+                        <label htmlFor={field} className={`mb-1.5 block text-sm font-medium ${body}`}>
+                          {field === 'name' ? 'Name' : 'Email'}{' '}
+                          <span className="text-red-500" aria-hidden="true">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${muted}`} aria-hidden="true">
+                            <FontAwesomeIcon icon={fieldIcons[field]} className="text-sm" />
+                          </span>
+                          <input
+                            type={field === 'email' ? 'email' : 'text'}
+                            id={field}
+                            name={field}
+                            autoComplete={field === 'email' ? 'email' : 'name'}
+                            inputMode={field === 'email' ? 'email' : undefined}
+                            placeholder={field === 'name' ? 'Your name' : 'you@example.com'}
+                            value={formData[field]}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            aria-required="true"
+                            aria-invalid={!!(errors[field] && touched[field])}
+                            aria-describedby={errors[field] && touched[field] ? `${field}-error` : undefined}
+                            className={inputClass(field)}
+                          />
+                          {isFieldValid(field) && (
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" aria-hidden="true">
+                              <FontAwesomeIcon icon={faCheck} className="text-xs" />
+                            </span>
+                          )}
+                        </div>
+                        {errors[field] && touched[field] && (
+                          <p id={`${field}-error`} className="mt-1.5 text-xs text-red-500" role="alert">{errors[field]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="subject" className={`mb-1.5 block text-sm font-medium ${body}`}>
+                      Subject <span className="text-red-500" aria-hidden="true">*</span>
+                    </label>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {SUBJECT_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => handleSubjectPreset(preset)}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                            formData.subject === preset
+                              ? 'liquid-glass-btn-primary text-white'
+                              : darkMode
+                                ? 'liquid-glass-chip-dark text-slate-200'
+                                : 'liquid-glass-chip text-slate-700'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="relative">
+                      <span className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${muted}`} aria-hidden="true">
+                        <FontAwesomeIcon icon={fieldIcons.subject} className="text-sm" />
+                      </span>
+                      <input
+                        type="text"
+                        id="subject"
+                        name="subject"
+                        autoComplete="off"
+                        placeholder="What's this about?"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        aria-required="true"
+                        aria-invalid={!!(errors.subject && touched.subject)}
+                        aria-describedby={errors.subject && touched.subject ? 'subject-error' : undefined}
+                        className={inputClass('subject')}
+                      />
+                      {isFieldValid('subject') && (
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" aria-hidden="true">
+                          <FontAwesomeIcon icon={faCheck} className="text-xs" />
+                        </span>
+                      )}
+                    </div>
+                    {errors.subject && touched.subject && (
+                      <p id="subject-error" className="mt-1.5 text-xs text-red-500" role="alert">{errors.subject}</p>
+                    )}
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label htmlFor="message" className={`text-sm font-medium ${body}`}>
+                        Message <span className="text-red-500" aria-hidden="true">*</span>
+                      </label>
+                      <span className={`text-xs tabular-nums ${messageReady ? 'text-emerald-500' : muted}`} aria-live="polite">
+                        {formData.message.length}/{MESSAGE_MAX}
+                      </span>
+                    </div>
+                    <textarea
+                      id="message"
+                      name="message"
+                      placeholder={`Tell me about your project or idea (min. ${MESSAGE_MIN} characters)…`}
+                      value={formData.message}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      rows={5}
+                      maxLength={MESSAGE_MAX}
+                      aria-required="true"
+                      aria-invalid={!!(errors.message && touched.message)}
+                      aria-describedby={errors.message && touched.message ? 'message-error' : 'message-hint'}
+                      className={`${inputClass('message')} min-h-[140px] resize-y`}
+                    />
+                    <div
+                      className={`mt-2 h-1 overflow-hidden rounded-full ${darkMode ? 'liquid-glass-progress-dark' : 'liquid-glass-progress'}`}
+                      aria-hidden="true"
+                    >
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          messageReady ? 'bg-emerald-500' : `bg-gradient-to-r ${gradient}`
+                        }`}
+                        style={{ width: `${messageProgress}%` }}
+                      />
+                    </div>
+                    <p id="message-hint" className={`mt-1.5 text-xs ${muted}`}>
+                      {messageReady ? 'Message length looks good' : `At least ${MESSAGE_MIN} characters required`}
+                    </p>
+                    {errors.message && touched.message && (
+                      <p id="message-error" className="mt-1.5 text-xs text-red-500" role="alert">{errors.message}</p>
+                    )}
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting}
+                    aria-busy={isSubmitting}
+                    className="liquid-glass-btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-8 py-3.5 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    whileHover={prefersReducedMotion || isSubmitting ? undefined : { y: -2 }}
+                    whileTap={isSubmitting ? undefined : { scale: 0.98 }}
+                  >
+                    <FontAwesomeIcon icon={faPaperPlane} className={`text-sm ${isSubmitting ? 'animate-pulse' : ''}`} aria-hidden="true" />
+                    {isSubmitting ? 'Sending…' : 'Send Message'}
+                  </motion.button>
+
+                  {submitStatus === 'error' && (
+                    <p className="mt-4 text-center text-sm text-red-500" role="alert" aria-live="assertive">
+                      Something went wrong. Please try again or email me directly.
+                    </p>
+                  )}
+                  {submitStatus === 'success' && (
+                    <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-emerald-500" role="status">
+                      <FontAwesomeIcon icon={faCheckCircle} aria-hidden="true" />
+                      Message sent!
+                    </p>
+                  )}
+
+                  <p className={`mt-4 text-center text-xs ${muted}`}>
+                    By submitting, you agree to be contacted about your inquiry. No spam, ever.
+                  </p>
+                </form>
+              </motion.div>
+            </div>
+
+            <div
+              className={`flex flex-col items-center justify-between gap-5 border-t px-6 py-8 sm:flex-row md:px-10 lg:px-12 ${divider} ${
+                footerWash
+              }`}
+            >
+              <p className={`max-w-md text-center text-sm sm:text-left md:text-base ${body}`}>
+                Not sure what to write? Mention your timeline, goals, and how {siteMeta.name} can help.
+              </p>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                <MotionLink
+                  to="/projects"
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold sm:flex-none ${
+                    darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FontAwesomeIcon icon={faFolderOpen} aria-hidden="true" />
+                  View Projects
+                </MotionLink>
+                <MotionLink
+                  to="/skills"
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold sm:flex-none ${
+                    darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  View Skills
+                </MotionLink>
+                <MotionLink
+                  to="/about"
+                  className="liquid-glass-btn-primary group inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex-none"
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Learn About Me
+                  <FontAwesomeIcon icon={faArrowRight} className="text-sm transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </MotionLink>
+              </div>
+            </div>
+          </GlassPanel>
+          </motion.div>
+      </div>
     </section>
   );
 };

@@ -1,77 +1,177 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import useReducedMotion from '../hooks/useReducedMotion';
+
+const getGridSize = (width) => {
+  if (width < 640) return { cols: 5, rows: 4 };
+  if (width < 768) return { cols: 7, rows: 4 };
+  if (width < 1024) return { cols: 9, rows: 5 };
+  return { cols: 11, rows: 5 };
+};
+
+const PARALLAX_SPRING = { stiffness: 48, damping: 22, mass: 0.75 };
+
+const GridCell = ({
+  cell,
+  cols,
+  rows,
+  mouseX,
+  mouseY,
+  darkMode,
+  cellClass,
+  showEntrance,
+}) => {
+  const distX = (cell.col / Math.max(cols - 1, 1) - 0.5) + mouseX;
+  const distY = (cell.row / Math.max(rows - 1, 1) - 0.5) + mouseY;
+  const influence = 1 - Math.min(1, Math.hypot(distX, distY));
+  const opacity = 0.18 + influence * 0.42;
+  const scale = 0.94 + influence * 0.06;
+  const glow = darkMode
+    ? `0 0 ${10 + influence * 18}px rgba(59, 130, 246, ${0.03 + influence * 0.07})`
+    : `0 0 ${10 + influence * 18}px rgba(59, 130, 246, ${0.05 + influence * 0.09})`;
+
+  return (
+    <div
+      className={`rounded-2xl backdrop-blur-[2px] ${showEntrance ? 'grid-cell-enter' : ''} ${cellClass}`}
+      style={{
+        '--cell-delay': `${cell.id * 8}ms`,
+        ...(showEntrance
+          ? {}
+          : { opacity, transform: `scale(${scale})`, boxShadow: glow }),
+      }}
+    />
+  );
+};
+
+GridCell.propTypes = {
+  cell: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    col: PropTypes.number.isRequired,
+    row: PropTypes.number.isRequired,
+  }).isRequired,
+  cols: PropTypes.number.isRequired,
+  rows: PropTypes.number.isRequired,
+  mouseX: PropTypes.number.isRequired,
+  mouseY: PropTypes.number.isRequired,
+  darkMode: PropTypes.bool.isRequired,
+  cellClass: PropTypes.string.isRequired,
+  showEntrance: PropTypes.bool.isRequired,
+};
 
 const Grid3DBackground = ({ darkMode, mousePosition }) => {
-    // Calculate grid size based on screen width
-    const gridSize = useMemo(() => {
-        if (typeof window !== 'undefined') {
-            if (window.innerWidth < 640) return { cols: 4, total: 16 };
-            if (window.innerWidth < 768) return { cols: 6, total: 24 };
-            if (window.innerWidth < 1024) return { cols: 8, total: 32 };
-            return { cols: 10, total: 40 };
-        }
-        return { cols: 8, total: 32 };
-    }, []);
+  const prefersReducedMotion = useReducedMotion();
+  const [gridSize, setGridSize] = useState(() => getGridSize(
+    typeof window !== 'undefined' ? window.innerWidth : 1024,
+  ));
+  const [showEntrance, setShowEntrance] = useState(true);
 
+  const targetX = useMotionValue(0);
+  const targetY = useMotionValue(0);
+  const springX = useSpring(targetX, PARALLAX_SPRING);
+  const springY = useSpring(targetY, PARALLAX_SPRING);
+
+  useEffect(() => {
+    targetX.set(mousePosition.x * 16);
+    targetY.set(mousePosition.y * 10);
+  }, [mousePosition.x, mousePosition.y, targetX, targetY]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const update = () => setGridSize(getGridSize(window.innerWidth));
+    update();
+    mq.addEventListener('change', update);
+    window.addEventListener('resize', update);
+    return () => {
+      mq.removeEventListener('change', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setShowEntrance(false);
+      return undefined;
+    }
+    setShowEntrance(true);
+    const timer = window.setTimeout(() => setShowEntrance(false), 900);
+    return () => window.clearTimeout(timer);
+  }, [prefersReducedMotion, gridSize]);
+
+  const cells = useMemo(() => {
+    const total = gridSize.cols * gridSize.rows;
+    return Array.from({ length: total }, (_, i) => ({
+      id: i,
+      col: i % gridSize.cols,
+      row: Math.floor(i / gridSize.cols),
+    }));
+  }, [gridSize]);
+
+  const cellClass = darkMode
+    ? 'border border-white/[0.07] bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+    : 'border border-white/55 bg-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]';
+
+  const vignette = darkMode
+    ? 'radial-gradient(ellipse 85% 75% at 50% 45%, transparent 25%, rgba(15,23,42,0.88) 100%)'
+    : 'radial-gradient(ellipse 85% 75% at 50% 45%, transparent 30%, rgba(248,250,252,0.92) 100%)';
+
+  const gridStyle = {
+    gridTemplateColumns: `repeat(${gridSize.cols}, minmax(0, 1fr))`,
+    gridTemplateRows: `repeat(${gridSize.rows}, minmax(0, 1fr))`,
+  };
+
+  if (prefersReducedMotion) {
     return (
-        <div className="absolute inset-0 overflow-hidden">
-            <div
-                className="absolute inset-0"
-                style={{
-                    perspective: '2000px',
-                    transform: `rotateX(${mousePosition.y * 8}deg) rotateY(${mousePosition.x * 8}deg)`,
-                    transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-            >
-                <div
-                    className={`absolute inset-0 grid gap-4 p-4`}
-                    style={{
-                        gridTemplateColumns: `repeat(${gridSize.cols}, minmax(0, 1fr))`,
-                        transform: 'translateZ(-150px)',
-                        transformStyle: 'preserve-3d'
-                    }}
-                >
-                    {Array.from({ length: gridSize.total }).map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className={`rounded-lg backdrop-blur-sm ${darkMode
-                                    ? `bg-gradient-to-br from-blue-500/5 to-purple-500/5`
-                                    : `bg-gradient-to-br from-blue-300/10 to-purple-300/10`
-                                }`}
-                            initial={{ opacity: 0, z: -150 }}
-                            animate={{
-                                opacity: 1,
-                                z: Math.sin((i % gridSize.cols) * 0.5 + (mousePosition.x * 1.2)) * 40,
-                                rotateX: Math.cos((i % gridSize.cols) * 0.5 + (mousePosition.y * 1.2)) * 15,
-                                rotateY: Math.sin((i % gridSize.cols) * 0.5 + (mousePosition.x * 1.2)) * 15,
-                            }}
-                            transition={{
-                                duration: 5,
-                                delay: i * 0.04,
-                                repeat: Infinity,
-                                repeatType: 'reverse',
-                                ease: 'easeInOut',
-                            }}
-                            style={{
-                                boxShadow: darkMode
-                                    ? '0 0 15px rgba(59, 130, 246, 0.1)'
-                                    : '0 0 15px rgba(59, 130, 246, 0.15)',
-                            }}
-                        />
-                    ))}
-                </div>
-            </div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 grid gap-2.5 p-8 opacity-35" style={gridStyle}>
+          {cells.map((cell) => (
+            <div key={cell.id} className={`rounded-2xl ${cellClass}`} />
+          ))}
         </div>
+        <div className="absolute inset-0" style={{ background: vignette }} />
+      </div>
     );
+  }
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <motion.div className="absolute inset-0" style={{ x: springX, y: springY }}>
+        <div className="absolute inset-0 grid gap-2.5 p-8" style={gridStyle}>
+          {cells.map((cell) => (
+            <GridCell
+              key={cell.id}
+              cell={cell}
+              cols={gridSize.cols}
+              rows={gridSize.rows}
+              mouseX={mousePosition.x}
+              mouseY={mousePosition.y}
+              darkMode={darkMode}
+              cellClass={cellClass}
+              showEntrance={showEntrance}
+            />
+          ))}
+        </div>
+      </motion.div>
+
+      <div className="absolute inset-0" style={{ background: vignette }} />
+
+      <div
+        className={`absolute inset-x-0 top-0 h-24 ${
+          darkMode
+            ? 'bg-gradient-to-b from-slate-950/50 to-transparent'
+            : 'bg-gradient-to-b from-slate-50/80 to-transparent'
+        }`}
+      />
+    </div>
+  );
 };
 
 Grid3DBackground.propTypes = {
-    darkMode: PropTypes.bool.isRequired,
-    mousePosition: PropTypes.shape({
-        x: PropTypes.number.isRequired,
-        y: PropTypes.number.isRequired,
-    }).isRequired,
+  darkMode: PropTypes.bool.isRequired,
+  mousePosition: PropTypes.shape({
+    x: PropTypes.number.isRequired,
+    y: PropTypes.number.isRequired,
+  }).isRequired,
 };
 
 export default React.memo(Grid3DBackground);

@@ -18,6 +18,8 @@ import Education from './components/Education';
 import ThankYou from './components/ThankYou';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+import ScrollToTop from './components/ScrollToTop';
+import PageTransition from './components/PageTransition';
 import './index.css';
 
 const App = () => {
@@ -51,43 +53,42 @@ const App = () => {
     }
   }, [darkMode]);
 
-  // Optional: Listen to system preference changes and update darkMode state
+  // Follow system theme only when the user has not set a manual preference
   useEffect(() => {
+    if (localStorage.getItem('darkMode') !== null) return undefined;
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      setDarkMode(e.matches);
-      localStorage.setItem('darkMode', JSON.stringify(e.matches));
-    };
+    const handleChange = (e) => setDarkMode(e.matches);
 
     mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   return (
     <Router>
       <ErrorBoundary darkMode={darkMode}>
-        <div className={`min-h-screen transition-colors duration-500 ease-out overflow-x-hidden ${
+        <ScrollToTop />
+        <div className={`flex min-h-screen w-full flex-col transition-colors duration-500 ease-out overflow-x-hidden ${
           darkMode
             ? 'bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white'
-            : 'bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900'
+            : 'bg-gradient-to-b from-slate-50 via-white to-blue-50/30 text-slate-900'
         }`}>
           <Header toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
-          
-          <main className="pt-28"> {/* Added padding-top to account for fixed header */}
-            <Routes>
-              <Route path="/" element={<Hero darkMode={darkMode} />} />
-              <Route path="/about" element={<About darkMode={darkMode} />} />
-              <Route path="/skills" element={<Skills darkMode={darkMode} />} />
-              <Route path="/experience" element={<Experience darkMode={darkMode} />} />
-              <Route path="/projects" element={<Projects darkMode={darkMode} />} />
-              <Route path="/contact" element={<Contact darkMode={darkMode} />} />
-              <Route path="/education" element={<Education darkMode={darkMode} />} />
-              <Route path="/thank-you" element={<ThankYou darkMode={darkMode} />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+
+          <main id="main-content" tabIndex="-1" className="w-full flex-1 pt-28 outline-none">
+            <PageTransition>
+              <Routes>
+                <Route path="/" element={<Hero darkMode={darkMode} />} />
+                <Route path="/about" element={<About darkMode={darkMode} />} />
+                <Route path="/skills" element={<Skills darkMode={darkMode} />} />
+                <Route path="/experience" element={<Experience darkMode={darkMode} />} />
+                <Route path="/projects" element={<Projects darkMode={darkMode} />} />
+                <Route path="/contact" element={<Contact darkMode={darkMode} />} />
+                <Route path="/education" element={<Education darkMode={darkMode} />} />
+                <Route path="/thank-you" element={<ThankYou darkMode={darkMode} />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </PageTransition>
           </main>
 
           <Footer darkMode={darkMode} />

@@ -1,135 +1,126 @@
 import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faArrowUp } from '@fortawesome/free-solid-svg-icons';
+import useReducedMotion from '../hooks/useReducedMotion';
+import { siteMeta } from './siteData';
+import GlassPanel from './GlassPanel';
+import SectionBackground from './SectionBackground';
+import { getSectionTheme, getBluePanelWash } from './themeTokens';
+
+const MotionLink = motion.create(Link);
+
+const FOOTER_LINKS = [
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About' },
+  { to: '/skills', label: 'Skills' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/experience', label: 'Experience' },
+  { to: '/education', label: 'Education' },
+  { to: '/contact', label: 'Contact' },
+];
 
 const Footer = ({ darkMode }) => {
+  const prefersReducedMotion = useReducedMotion();
+  const { muted, body, accent, gradient, panel, topEdge, sectionBg } = getSectionTheme(darkMode);
+  const panelWash = getBluePanelWash(darkMode);
+
   const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+  }, [prefersReducedMotion]);
 
   return (
     <footer
-      className={`relative py-12 ${
-        darkMode
-          ? 'bg-gray-800/50 text-white'
-          : 'bg-gray-100/50 text-gray-800'
-      }`}
+      className={`relative border-t py-10 md:py-14 ${
+        darkMode ? 'border-white/10 text-white' : 'border-slate-200 text-slate-900'
+      } ${sectionBg}`}
     >
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className={`absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-20 
-            ${darkMode ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-blue-400 to-purple-400'}`}
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            rotate: [360, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className={`absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl opacity-20 
-            ${darkMode ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-purple-400 to-pink-400'}`}
-        />
+      <SectionBackground darkMode={darkMode} />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className={`absolute -top-32 right-0 h-64 w-64 rounded-full blur-3xl opacity-15 ${
+          darkMode ? 'bg-blue-500/20' : 'bg-blue-300/30'
+        }`} />
+        <div className={`absolute -bottom-32 left-0 h-64 w-64 rounded-full blur-3xl opacity-15 ${
+          darkMode ? 'bg-purple-500/15' : 'bg-purple-300/25'
+        }`} />
       </div>
 
-      <div className="container mx-auto px-4 relative">
-        <div className="flex flex-col items-center space-y-8">
-
-          {/* Copyright Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col items-center space-y-2"
+      <div className="page-wrap relative mx-auto w-full max-w-6xl px-4 md:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45 }}
+          className="relative mx-auto max-w-2xl"
+        >
+          <GlassPanel
+            darkMode={darkMode}
+            prefersReducedMotion={prefersReducedMotion}
+            panelClass={panel}
+            topEdge={topEdge}
+            wash={panelWash}
+            className="px-6 py-8 md:px-10 md:py-10"
           >
-            <p className="flex items-center justify-center text-base">
-              <span>Made with</span>
-              <motion.span
-                animate={{
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  repeatType: 'reverse',
-                }}
-                className="mx-2 text-red-500"
-              >
-                <FontAwesomeIcon icon={faHeart} />
-              </motion.span>
-              <span>by Nikita</span>
-            </p>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              © {new Date().getFullYear()} All rights reserved
-            </p>
-          </motion.div>
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-wrap justify-center gap-2">
+              {FOOTER_LINKS.map((link) => (
+                <MotionLink
+                  key={link.to}
+                  to={link.to}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    darkMode ? 'liquid-glass-chip-dark text-slate-200' : 'liquid-glass-chip text-slate-700'
+                  }`}
+                  whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {link.label}
+                </MotionLink>
+              ))}
+            </div>
 
-          {/* Back to Top Button with liquid effects */}
-          <motion.button
-            onClick={scrollToTop}
-            whileHover={{ scale: 1.1, y: -4 }}
-            whileTap={{ scale: 0.9 }}
-            aria-label="Back to top"
-            className={`px-6 py-3 rounded-2xl text-sm font-medium flex items-center space-x-2 relative overflow-hidden shadow-lg
-              ${darkMode
-                ? 'bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-white/10 text-white'
-                : 'bg-gradient-to-r from-blue-100/50 to-purple-100/50 border border-gray-200/50 text-gray-800'
-              } backdrop-blur-xl`}
-          >
-            {/* Liquid shimmer effect */}
-            <motion.div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)`,
-                transform: 'translateX(-100%)',
-              }}
-              whileHover={{
-                transform: ['translateX(-100%)', 'translateX(100%)'],
-              }}
-              transition={{
-                duration: 0.8,
-                ease: "easeInOut",
-              }}
-            />
-            
-            {/* Pulsing glow */}
-            <motion.div
-              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-purple-400 blur-xl opacity-0"
-              whileHover={{ opacity: 0.3 }}
-              transition={{ duration: 0.3 }}
-            />
-            
-            <span className="relative z-10">Back to Top</span>
-            <motion.span
-              className="relative z-10"
-              animate={{ 
-                y: [-2, 2, -2],
-              }}
-              transition={{ 
-                duration: 1.5, 
-                repeat: Infinity, 
-                ease: "easeInOut" 
-              }}
+            <div className="space-y-1.5 text-center">
+              <p className={`flex items-center justify-center gap-2 text-sm font-medium sm:text-base ${body}`}>
+                <span>Made with</span>
+                <motion.span
+                  className="text-red-500"
+                  animate={prefersReducedMotion ? undefined : { scale: [1, 1.15, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                  aria-hidden="true"
+                >
+                  <FontAwesomeIcon icon={faHeart} className="text-sm" />
+                </motion.span>
+                <span>
+                  by{' '}
+                  <span className={`bg-gradient-to-r bg-clip-text font-semibold text-transparent ${gradient}`}>
+                    {siteMeta.name}
+                  </span>
+                </span>
+              </p>
+              <p className={`text-xs sm:text-sm ${muted}`}>
+                © {new Date().getFullYear()} All rights reserved
+              </p>
+            </div>
+
+            <div className={`h-px w-16 bg-gradient-to-r ${gradient} opacity-60`} aria-hidden="true" />
+
+            <motion.button
+              type="button"
+              onClick={scrollToTop}
+              whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label="Back to top"
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                darkMode ? 'liquid-glass-btn-secondary-dark text-white' : 'liquid-glass-btn-secondary text-slate-900'
+              }`}
             >
-              <FontAwesomeIcon icon={faArrowUp} className="text-sm" />
-            </motion.span>
-          </motion.button>
-        </div>
+              Back to Top
+              <FontAwesomeIcon icon={faArrowUp} className={`text-xs ${accent}`} aria-hidden="true" />
+            </motion.button>
+          </div>
+          </GlassPanel>
+        </motion.div>
       </div>
     </footer>
   );
