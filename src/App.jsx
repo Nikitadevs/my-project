@@ -1,101 +1,118 @@
-// src/App.jsx
-
-import React, { useState, useEffect } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/Header';
-import Hero from './components/Hero';
-import About from './components/About';
-import Projects from './components/Projects';
-import Skills from './components/Skills';
-import Contact from './components/Contact';
-import Experience from './components/Experience';
-import Education from './components/Education';
-import ThankYou from './components/ThankYou';
 import Footer from './components/Footer';
+import Hero from './components/Hero';
 import ErrorBoundary from './components/ErrorBoundary';
-import ScrollToTop from './components/ScrollToTop';
-import PageTransition from './components/PageTransition';
 import './index.css';
 
-const App = () => {
-  // Initialize darkMode state based on localStorage or system preference
-  const [darkMode, setDarkMode] = useState(() => {
-    // Check localStorage for saved mode
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) {
-      return JSON.parse(savedMode);
-    } else {
-      // Optional: Default to system preference
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-  });
+const About = lazy(() => import('./components/About'));
+const Projects = lazy(() => import('./components/Projects'));
+const Skills = lazy(() => import('./components/Skills'));
+const Experience = lazy(() => import('./components/Experience'));
+const Education = lazy(() => import('./components/Education'));
+const Contact = lazy(() => import('./components/Contact'));
+const NotFound = lazy(() => import('./components/NotFound'));
 
-  // Function to toggle dark mode and save preference to localStorage
-  const toggleDarkMode = () => {
-    setDarkMode((prevMode) => {
-      const newMode = !prevMode;
-      localStorage.setItem('darkMode', JSON.stringify(newMode));
-      return newMode;
-    });
+const pageTitles = {
+  '/': 'Nikita | Computer Engineer',
+  '/about': 'About | Nikita',
+  '/projects': 'Work | Nikita',
+  '/skills': 'Skills | Nikita',
+  '/experience': 'Experience | Nikita',
+  '/education': 'Education | Nikita',
+  '/contact': 'Contact | Nikita',
+};
+
+function getThemePreference() {
+  try {
+    const saved = window.localStorage.getItem('darkMode');
+    if (saved === 'true' || saved === 'false') {
+      return { dark: saved === 'true', manual: true };
+    }
+  } catch {
+    // The site remains usable when browser storage is unavailable.
+  }
+  return {
+    dark: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+    manual: false,
   };
+}
 
-  // Apply or remove the 'dark' class on the root element based on darkMode state
+function RouteEffects() {
+  const { pathname } = useLocation();
+  const previousPath = useRef(pathname);
+
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    document.title = pageTitles[pathname] || 'Page not found | Nikita';
+    if (previousPath.current !== pathname) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.getElementById('main-content')?.focus({ preventScroll: true });
     }
+    previousPath.current = pathname;
+  }, [pathname]);
+
+  return null;
+}
+
+function App() {
+  const [initialTheme] = useState(getThemePreference);
+  const [darkMode, setDarkMode] = useState(initialTheme.dark);
+  const [manualTheme, setManualTheme] = useState(initialTheme.manual);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#0b1020' : '#f7f8fc');
   }, [darkMode]);
 
-  // Follow system theme only when the user has not set a manual preference
   useEffect(() => {
-    if (localStorage.getItem('darkMode') !== null) return undefined;
-
+    if (manualTheme || !window.matchMedia) return undefined;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => setDarkMode(e.matches);
+    const onChange = (event) => setDarkMode(event.matches);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }, [manualTheme]);
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+  const toggleDarkMode = useCallback(() => {
+    setManualTheme(true);
+    setDarkMode((previous) => {
+      const next = !previous;
+      try {
+        window.localStorage.setItem('darkMode', String(next));
+      } catch {
+        // Keep the selected theme for this session even if storage is blocked.
+      }
+      return next;
+    });
   }, []);
 
   return (
-    <Router>
-      <ErrorBoundary darkMode={darkMode}>
-        <ScrollToTop />
-        <div className={`flex min-h-screen w-full flex-col transition-colors duration-500 ease-out overflow-x-hidden ${
-          darkMode
-            ? 'bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white'
-            : 'bg-gradient-to-b from-slate-50 via-white to-blue-50/30 text-slate-900'
-        }`}>
-          <Header toggleDarkMode={toggleDarkMode} darkMode={darkMode} />
-
-          <main id="main-content" tabIndex="-1" className="w-full flex-1 pt-28 outline-none">
-            <PageTransition>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ErrorBoundary>
+        <RouteEffects />
+        <a className="skip-link" href="#main-content">Skip to content</a>
+        <div className="site-shell">
+          <Header darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          <main id="main-content" tabIndex="-1">
+            <Suspense fallback={<div className="page-loading" role="status">Loading page…</div>}>
               <Routes>
-                <Route path="/" element={<Hero darkMode={darkMode} />} />
-                <Route path="/about" element={<About darkMode={darkMode} />} />
-                <Route path="/skills" element={<Skills darkMode={darkMode} />} />
-                <Route path="/experience" element={<Experience darkMode={darkMode} />} />
-                <Route path="/projects" element={<Projects darkMode={darkMode} />} />
-                <Route path="/contact" element={<Contact darkMode={darkMode} />} />
-                <Route path="/education" element={<Education darkMode={darkMode} />} />
-                <Route path="/thank-you" element={<ThankYou darkMode={darkMode} />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/" element={<Hero />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/skills" element={<Skills />} />
+                <Route path="/experience" element={<Experience />} />
+                <Route path="/education" element={<Education />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/thank-you" element={<Navigate to="/contact" replace />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
-            </PageTransition>
+            </Suspense>
           </main>
-
-          <Footer darkMode={darkMode} />
+          <Footer />
         </div>
       </ErrorBoundary>
-    </Router>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;
