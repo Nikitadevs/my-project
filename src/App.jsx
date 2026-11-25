@@ -62,7 +62,7 @@ function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#0b1020' : '#f7f8fc');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#0b1020' : '#f7f8fb');
   }, [darkMode]);
 
   useEffect(() => {

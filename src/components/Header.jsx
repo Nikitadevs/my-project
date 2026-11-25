@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { FiArrowRight, FiChevronDown, FiMenu, FiMoon, FiSun, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiMenu, FiMessageSquare, FiMoon, FiSun, FiX } from 'react-icons/fi';
 import { navItems, siteMeta } from './siteData';
 
 const moreItems = [
@@ -14,18 +14,33 @@ function Header({ darkMode, toggleDarkMode }) {
   const menuButtonRef = useRef(null);
   const moreButtonRef = useRef(null);
   const moreRef = useRef(null);
+  const mobileNavRef = useRef(null);
+  const moreFocusRef = useRef(null);
   const headerRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
     setMenuOpen(false);
     setMoreOpen(false);
-  }, [location.pathname]);
+  }, [location.key]);
+
+  useEffect(() => {
+    if (menuOpen) mobileNavRef.current?.querySelector('a')?.focus();
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!moreOpen || !moreFocusRef.current) return;
+    const links = moreRef.current?.querySelectorAll('a');
+    const focusTarget = moreFocusRef.current === 'last' ? links?.[links.length - 1] : links?.[0];
+    moreFocusRef.current = null;
+    focusTarget?.focus();
+  }, [moreOpen]);
 
   useEffect(() => {
     if (!menuOpen && !moreOpen) return undefined;
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         if (menuOpen) {
           setMenuOpen(false);
           menuButtonRef.current?.focus();
@@ -55,7 +70,12 @@ function Header({ darkMode, toggleDarkMode }) {
   }, [menuOpen, moreOpen]);
 
   return (
-    <header className="site-header" ref={headerRef}>
+    <header className="site-header" ref={headerRef} onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setMenuOpen(false);
+        setMoreOpen(false);
+      }
+    }}>
       <div className="header-inner container">
         <Link className="brand" to="/" aria-label={siteMeta.name + ', home'}>
           <span className="brand-mark" aria-hidden="true">N<span>.</span></span>
@@ -83,13 +103,25 @@ function Header({ darkMode, toggleDarkMode }) {
               aria-expanded={moreOpen}
               aria-controls="desktop-more-menu"
               onClick={() => setMoreOpen((open) => !open)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                event.preventDefault();
+                const direction = event.key === 'ArrowUp' ? 'last' : 'first';
+                if (moreOpen) {
+                  const links = moreRef.current?.querySelectorAll('a');
+                  (direction === 'last' ? links?.[links.length - 1] : links?.[0])?.focus();
+                } else {
+                  moreFocusRef.current = direction;
+                  setMoreOpen(true);
+                }
+              }}
             >
               More <FiChevronDown aria-hidden="true" />
             </button>
             <div id="desktop-more-menu" className="nav-more-panel" hidden={!moreOpen}>
               {moreItems.map((item) => (
                 <NavLink key={item.href} to={item.href} onClick={() => setMoreOpen(false)}>
-                  {item.label}<FiArrowRight aria-hidden="true" />
+                  {item.label}
                 </NavLink>
               ))}
             </div>
@@ -107,7 +139,7 @@ function Header({ darkMode, toggleDarkMode }) {
             {darkMode ? <FiSun aria-hidden="true" /> : <FiMoon aria-hidden="true" />}
           </button>
           <NavLink className="header-contact" to="/contact">
-            Let’s talk <FiArrowRight aria-hidden="true" />
+            Let’s talk <FiMessageSquare aria-hidden="true" />
           </NavLink>
           <button
             ref={menuButtonRef}
@@ -123,7 +155,7 @@ function Header({ darkMode, toggleDarkMode }) {
         </div>
       </div>
 
-      <nav id="mobile-menu" className="mobile-nav container" aria-label="Mobile navigation" hidden={!menuOpen}>
+      <nav ref={mobileNavRef} id="mobile-menu" className="mobile-nav container" aria-label="Mobile navigation" hidden={!menuOpen}>
         {navItems.map((item) => (
           <NavLink
             key={item.href}
@@ -132,7 +164,7 @@ function Header({ darkMode, toggleDarkMode }) {
             className={({ isActive }) => 'mobile-nav-link' + (isActive ? ' is-active' : '')}
             onClick={() => setMenuOpen(false)}
           >
-            {item.label}<FiArrowRight aria-hidden="true" />
+            {item.label}
           </NavLink>
         ))}
         <p className="mobile-nav-heading">Explore more</p>
@@ -143,7 +175,7 @@ function Header({ darkMode, toggleDarkMode }) {
             className={({ isActive }) => 'mobile-nav-link' + (isActive ? ' is-active' : '')}
             onClick={() => setMenuOpen(false)}
           >
-            {item.label}<FiArrowRight aria-hidden="true" />
+            {item.label}
           </NavLink>
         ))}
         <NavLink
@@ -151,7 +183,7 @@ function Header({ darkMode, toggleDarkMode }) {
           to="/contact"
           onClick={() => setMenuOpen(false)}
         >
-          Contact<FiArrowRight aria-hidden="true" />
+          Contact
         </NavLink>
       </nav>
     </header>

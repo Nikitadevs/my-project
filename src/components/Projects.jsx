@@ -140,9 +140,9 @@ function Projects() {
         ) : (
           <div className="empty-state">
             <span className="empty-state-icon"><FiSearch aria-hidden="true" /></span>
-            <h2>No projects found.</h2>
-            <p>Try a different search or show all projects.</p>
-            <button type="button" className="text-link" onClick={resetFilters}>Reset filters <span aria-hidden="true">→</span></button>
+            <h2>{query.trim() ? 'No matches for “' + query.trim() + '”.' : 'No projects found.'}</h2>
+            <p>{filter !== 'all' ? 'You’re searching ' + (filter === 'python' ? 'Python projects' : 'web apps') + '. Try another keyword or clear the filters.' : 'Try a project name or a tool like React or Python.'}</p>
+            <button type="button" className="text-link" onClick={resetFilters}>Show all {projects.length} projects</button>
           </div>
         )}
       </section>
